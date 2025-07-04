@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>7.3</LangVersion> 
+        <RootNamespace></RootNamespace>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+		<ConsoleEncoding>UTF-8</ConsoleEncoding> 
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Infra-CSharp">
+        <HintPath>..\..\..\Infra-CSharp\Infra-CSharp\bin\Debug\netstandard2.0\Infra-CSharp.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="JLGames\RabbitClient\Server\MMO\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="JLGames\RabbitClient\Server\MMO\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="JLGames\RabbitClient\Server\MMO\**" />
+    </ItemGroup>
+
+<!--    <ItemGroup>-->
+<!--      <Content Include="..\Libs\Infra-CSharp.dll">-->
+<!--        <Link>Infra-CSharp.dll</Link>-->
+<!--      </Content>-->
+<!--    </ItemGroup>-->
+	
+</Project>
