@@ -20,18 +20,6 @@
       </Reference>
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="JLGames\RabbitClient\Server\MMO\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="JLGames\RabbitClient\Server\MMO\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="JLGames\RabbitClient\Server\MMO\**" />
-    </ItemGroup>
-
 <!--    <ItemGroup>-->
 <!--      <Content Include="..\Libs\Infra-CSharp.dll">-->
 <!--        <Link>Infra-CSharp.dll</Link>-->

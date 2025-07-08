@@ -96,7 +96,7 @@ namespace JLGames.RabbitClient.Home
 
                 return false;
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 return false;
             }

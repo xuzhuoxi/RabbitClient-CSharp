@@ -1,8 +1,7 @@
-﻿
-using JLGames.Infra.Buffer;
+﻿using JLGames.Infra.Buffer;
 using JLGames.Infra.Net;
 
-namespace JLGames.RabbitClient.Server
+namespace JLGames.RabbitClient.Server.Message
 {
     public interface IRabbitMessageReader : IRabbitMessage, IDataBufferReader, IDataBufferCopier, IByteBufferReader, IByteBufferCopier
     {

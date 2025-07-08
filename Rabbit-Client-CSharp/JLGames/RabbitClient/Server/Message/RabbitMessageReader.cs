@@ -2,7 +2,7 @@
 using JLGames.Infra.Buffer;
 using JLGames.Infra.Net;
 
-namespace JLGames.RabbitClient.Server
+namespace JLGames.RabbitClient.Server.Message
 {
     public class RabbitMessageReader : IRabbitMessageReader
     {

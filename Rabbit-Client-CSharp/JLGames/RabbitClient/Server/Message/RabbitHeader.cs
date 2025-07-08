@@ -1,4 +1,4 @@
-﻿namespace JLGames.RabbitClient.Server
+﻿namespace JLGames.RabbitClient.Server.Message
 {
     internal struct RabbitHeader
     {

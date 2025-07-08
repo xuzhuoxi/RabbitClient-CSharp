@@ -1,6 +1,6 @@
 ﻿using JLGames.Infra.Net;
 
-namespace JLGames.RabbitClient.Server
+namespace JLGames.RabbitClient.Server.Message
 {
     public class RabbitRequestMsg : RabbitMessageWriter, IRabbitRequestMsg
     {

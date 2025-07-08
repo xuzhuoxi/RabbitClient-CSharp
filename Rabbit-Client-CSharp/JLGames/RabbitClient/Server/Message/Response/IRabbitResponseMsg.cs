@@ -1,7 +1,6 @@
-﻿
-using JLGames.Infra;
+﻿using JLGames.Infra;
 
-namespace JLGames.RabbitClient.Server
+namespace JLGames.RabbitClient.Server.Message
 {
     public interface IRabbitResponseMsg : IRabbitMessageReader, ICloneable<IRabbitResponseMsg>
     {

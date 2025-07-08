@@ -1,4 +1,4 @@
-﻿namespace JLGames.RabbitClient.Server
+﻿namespace JLGames.RabbitClient.Server.Message
 {
     public class RabbitResponseMsg : RabbitMessageReader, IRabbitResponseMsg
     {

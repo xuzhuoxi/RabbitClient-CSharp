@@ -1,5 +1,6 @@
 using JLGames.Infra.Event;
 using JLGames.Infra.Threadx;
+using JLGames.RabbitClient.Server.Message;
 
 namespace JLGames.RabbitClient.Server
 {
