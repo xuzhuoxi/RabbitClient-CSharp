@@ -11,25 +11,25 @@ namespace JLGames.RabbitClientTest.Rabbit;
 [TestFixture]
 public class ManagerTest
 {
-    private static readonly string m_BasePath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent!.Parent!.Parent!.FullName;
+    private static readonly string s_BasePath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent!.Parent!.Parent!.FullName;
 
-    private const string m_HomeUrl = "http://127.0.0.1:9000";
-    private const bool m_UsePost = false;
-    private const bool m_EnableKey = true;
-    private const bool m_IsPemKey = true;
+    private const string c_HomeUrl = "http://127.0.0.1:9000";
+    private const bool c_UsePost = false;
+    private const bool c_EnableKey = true;
+    private const bool c_IsPemKey = true;
 
-    private const string m_PlatformId = "main01";
-    private const string m_TypeName = "Rabbit-Server";
+    private const string c_PlatformId = "main01";
+    private const string c_TypeName = "Rabbit-Server";
 
     [Test]
     public async Task TestManagerLink()
     {
-        var pubKeyPath = Path.Combine(m_BasePath!, "Resources/Home", "x509_public.pem");
-        var manager = new RabbitClientManager(m_HomeUrl, m_UsePost, m_EnableKey, m_IsPemKey, pubKeyPath);
+        var pubKeyPath = Path.Combine(s_BasePath!, "Resources/Home", "x509_public.pem");
+        var manager = new RabbitClientManager(c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey, pubKeyPath);
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnProgressHome, OnManagerProgressHome);
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnProgressServer, OnManagerProgressServer);
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnConnectFinish, OnLinkFinish);
-        await manager.ConnectThroughHome(m_PlatformId, m_TypeName, true);
+        await manager.ConnectThroughHome(c_PlatformId, c_TypeName, true);
         await Task.Delay(5000);
     }
 

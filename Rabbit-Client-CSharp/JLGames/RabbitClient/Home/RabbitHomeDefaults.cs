@@ -6,7 +6,7 @@ namespace JLGames.RabbitClient.Home
     {
         public const string HttpKeyQuery = "q";
         public const string HttpPatternRoute = "/route";
-        public static bool LittleEndian { get; private set; }
+        public static bool LittleEndian { get; private set; } = true;
 
         public static IBase64Encoding Base64Encoding { get; private set; } = new Base64RawUrlEncoding();
 

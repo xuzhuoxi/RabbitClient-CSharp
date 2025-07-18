@@ -12,7 +12,7 @@ namespace JLGames.RabbitClient.Server.Message
         public string Extension => m_Header.Extension;
         public string ProtoId => m_Header.ProtoId;
         public string ClientId => m_Header.ClientId;
-        public string ProtoUUID => m_Header.ProtoUUID;
+        public string ProtoUid => m_Header.ProtoUid;
 
         public RabbitMessageReader(bool littleEndian = true)
         {

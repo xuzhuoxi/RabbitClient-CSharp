@@ -6,7 +6,7 @@
         public string ProtoId;
         public string ClientId;
 
-        public string ProtoUUID => $"{Extension}_{ProtoId}";
+        public string ProtoUid => $"{Extension}:{ProtoId}";
 
         public void SetHeaderInfo(string extension, string protoId, string cid)
         {

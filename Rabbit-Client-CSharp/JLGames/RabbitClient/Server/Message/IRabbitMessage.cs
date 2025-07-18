@@ -21,9 +21,9 @@
         string ClientId { get; }
 
         /// <summary>
-        /// ProtoUUID
+        /// ProtoUID
         /// 协议唯一Id
         /// </summary>
-        string ProtoUUID { get; }
+        string ProtoUid { get; }
     }
 }

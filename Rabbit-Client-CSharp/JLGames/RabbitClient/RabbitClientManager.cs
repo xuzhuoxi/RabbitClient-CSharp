@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using JLGames.Infra.Crypto.Key;
+using JLGames.Infra.Crypto.Symmetric;
 using JLGames.Infra.Event;
 using JLGames.Infra.Net;
 using JLGames.RabbitClient.Home;
@@ -11,6 +12,7 @@ namespace JLGames.RabbitClient
     {
         private readonly HomeSettings m_HomeSettings;
         private QueryRouteInfo m_QueryInfo;
+        private QueryResult m_QueryResult;
         private RabbitHomeClient m_HomeClient;
         private RabbitSocketServer m_SocketServer;
         private RabbitSocketClient m_SocketClient;
@@ -74,6 +76,7 @@ namespace JLGames.RabbitClient
 
         private void HandleHomeResponse(QueryResult result)
         {
+            m_QueryResult = result;
             if (!result.Ok)
             {
                 if (result.KeyError || result.ParamError || result.TimeOut)
@@ -131,6 +134,12 @@ namespace JLGames.RabbitClient
         private void OnServerOpenSuc(EventData evd)
         {
             var info = (SocketEvents.SocketConnEventInfo)evd.Data;
+            if (null != m_QueryResult.SucInfo.OpenSk)
+            {
+                var cipher = new AesCipher(m_QueryResult.SucInfo.OpenSk);
+                m_SocketClient.SetSymmetricCipher(cipher);
+            }
+
             m_SocketClient.StartReceiving();
             DispatchEvent(RabbitClientManagerEvents.EventOnProgressServer,
                 new RabbitClientManagerEvents.ProgressEventData<SocketEvents.SocketConnEventInfo>
