@@ -1,0 +1,14 @@
+# 忽略C#项目编译与运行产物
+Rabbit-Client-CSharp/bin/
+Rabbit-Client-CSharp/obj/
+Rabbit-Client-Test/bin/
+Rabbit-Client-Test/obj/
+.vs/
+.vscode/
+.idea/
+*.iml
+
+# 忽略 IDE 配置文件
+.vscode/
+.idea/
+*.iml
