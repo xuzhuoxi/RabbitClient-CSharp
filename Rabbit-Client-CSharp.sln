@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit-Client-CSharp", "Rabbit-Client-CSharp\Rabbit-Client-CSharp.csproj", "{3E403B9C-8319-4E5C-9404-23318E70F8A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit-Client", "Rabbit-Client\Rabbit-Client.csproj", "{3E403B9C-8319-4E5C-9404-23318E70F8A5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit-Client-Test", "Rabbit-Client-Test\Rabbit-Client-Test.csproj", "{54184091-EB2F-409A-9BB0-2B8CB9ABFD1A}"
 EndProject

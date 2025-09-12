@@ -25,7 +25,7 @@
     </ItemGroup>
 	
 	<ItemGroup>
-      <ProjectReference Include="..\Rabbit-Client-CSharp\Rabbit-Client-CSharp.csproj" />
+      <ProjectReference Include="..\Rabbit-Client\Rabbit-Client.csproj" />
     </ItemGroup>
 	
 	<ItemGroup>
