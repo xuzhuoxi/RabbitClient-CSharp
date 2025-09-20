@@ -9,27 +9,41 @@ using JLGames.Infra.Net;
 
 namespace JLGames.RabbitClient.Home
 {
-    public class RabbitHomeClient
+    public class RabbitHomeClient : IDisposable
     {
+        private readonly IHttpClientProxy m_HttpProxy;
         private readonly string m_HomeUrl;
+        private readonly Uri m_HomeUri;
+
         private readonly bool m_UsePost;
         private readonly TimeSpan m_Timeout;
 
         private QueryRouteInfo m_QueryInfo;
         private IRsaPublicCipher m_PubRsaCipher;
 
-        public RabbitHomeClient(string homeUrl, bool usePost)
+        public string HomeUrl => m_HomeUrl;
+
+        public RabbitHomeClient(IHttpClientProxy httpProxyProxy, string homeUrl, bool usePost)
         {
-            m_HomeUrl = homeUrl;
+            m_HttpProxy = httpProxyProxy;
+            m_HomeUrl = homeUrl.Trim();
+            m_HomeUri = new Uri(m_HomeUrl);
             m_UsePost = usePost;
             m_Timeout = TimeSpan.FromSeconds(100);
         }
 
-        public RabbitHomeClient(string homeUrl, bool usePost, TimeSpan timeout)
+        public RabbitHomeClient(IHttpClientProxy httpProxyProxy, string homeUrl, bool usePost, TimeSpan timeout)
         {
-            m_HomeUrl = homeUrl;
+            m_HttpProxy = httpProxyProxy;
+            m_HomeUrl = homeUrl.Trim();
+            m_HomeUri = new Uri(m_HomeUrl);
             m_UsePost = usePost;
             m_Timeout = timeout;
+        }
+
+        public void Dispose()
+        {
+            m_PubRsaCipher?.Dispose();
         }
 
         /// <summary>
@@ -56,21 +70,17 @@ namespace JLGames.RabbitClient.Home
         /// <param name="queryInfo"></param>
         /// <param name="isPemKey"></param>
         /// <param name="publicKeyPath"></param>
+        /// <param name="publicKeyContent"></param>
         /// <returns></returns>
-        public Task<QueryResult> QueryFromHome(QueryRouteInfo queryInfo, bool isPemKey, string publicKeyPath)
+        public Task<QueryResult> QueryFromHome(QueryRouteInfo queryInfo, bool isPemKey, string publicKeyPath, string publicKeyContent)
         {
-            IRsaPublicCipher pubCipher;
-            if (isPemKey)
-                pubCipher = RsaUtils.LoadPublicCipherX509(publicKeyPath);
-            else
-                pubCipher = RsaUtils.LoadPublicCipherPkcs1V15(publicKeyPath);
+            var pubCipher = RabbitHomeUtils.LoadHomePublicRsa(isPemKey, publicKeyPath, publicKeyContent);
             if (null == pubCipher)
             {
                 return Task.FromResult(new QueryResult { Ok = false, KeyError = true });
             }
 
-            SetPublicRsa(pubCipher);
-            return QueryFromHome(queryInfo);
+            return QueryFromHome(queryInfo, pubCipher);
         }
 
         /// <summary>
@@ -116,11 +126,8 @@ namespace JLGames.RabbitClient.Home
         {
             var base64 = RabbitHomeDefaults.Base64Encoding.EncodeToString(bytes);
             var pattern = $"{RabbitHomeDefaults.HttpPatternRoute}?{RabbitHomeDefaults.HttpKeyQuery}={base64}";
-            using (var proxy = new HttpClientProxy(m_HomeUrl, m_Timeout))
-            {
-                var result = await proxy.GetBytesAsync(pattern, m_Timeout);
-                return HandleHomeResponse(result);
-            }
+            var result = await m_HttpProxy.GetBytesAsync(m_HomeUri, pattern, m_Timeout);
+            return HandleHomeResponse(result);
         }
 
         private async Task<QueryResult> DoPost(byte[] bytes)
@@ -131,11 +138,8 @@ namespace JLGames.RabbitClient.Home
             {
                 { RabbitHomeDefaults.HttpKeyQuery, base64 }
             };
-            using (var proxy = new HttpClientProxy(m_HomeUrl, m_Timeout))
-            {
-                var result = await proxy.PostBytesAsync(pattern, value, m_Timeout);
-                return HandleHomeResponse(result);
-            }
+            var result = await m_HttpProxy.PostBytesAsync(m_HomeUri, pattern, value, m_Timeout);
+            return HandleHomeResponse(result);
         }
 
         private QueryResult HandleHomeResponse(HttpResult<byte[]> result)
@@ -143,14 +147,24 @@ namespace JLGames.RabbitClient.Home
             if (result.Timeout)
                 return new QueryResult { Ok = false, TimeOut = true };
 
-            var json = RabbitHomeDefaults.Base64Encoding.DecodeStringFrom(result.Content);
             if (result.StatusCode != HttpStatusCode.OK)
             {
-                var info = HomeResponseInfo.FromJsonString(json);
-                return new QueryResult { Ok = true, SucInfo = null, FailInfo = info };
+                if (null == result.Content)
+                {
+                    return new QueryResult
+                    {
+                        Ok = false, SucInfo = null,
+                        FailInfo = new HomeResponseInfo(-1, "No response content.", "")
+                    };
+                }
+
+                var failJson = RabbitHomeDefaults.Base64Encoding.DecodeStringFrom(result.Content);
+                var info = HomeResponseInfo.FromJsonString(failJson);
+                return new QueryResult { Ok = false, SucInfo = null, FailInfo = info };
             }
 
-            var backInfo = QueryRouteBackInfo.FromJsonString(json);
+            var sucJson = RabbitHomeDefaults.Base64Encoding.DecodeStringFrom(result.Content);
+            var backInfo = QueryRouteBackInfo.FromJsonString(sucJson);
             backInfo.ComputeOpenSk(m_QueryInfo.TempAesKey);
             return new QueryResult { Ok = true, SucInfo = backInfo, FailInfo = null };
         }

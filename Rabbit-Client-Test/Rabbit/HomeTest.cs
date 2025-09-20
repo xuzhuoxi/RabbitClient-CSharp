@@ -40,13 +40,14 @@ public class HomeTest
     private async Task DoQueryHome(QueryRouteInfo queryRouteInfo)
     {
         var pubKeyPath = Path.Combine(s_BasePath!, "Resources/Home", "x509_public.pem");
-        var homeSettings = new HomeSettings(c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey, pubKeyPath);
+        var homeSettings = new HomeSettings(c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey);
+        homeSettings.SetPublicKeyPath(pubKeyPath);
 
         var homeClient = new RabbitHomeClient(homeSettings.HomeUrl, homeSettings.UsePost);
         QueryResult result;
         if (homeSettings.EnableKey)
         {
-            result = await homeClient.QueryFromHome(queryRouteInfo, homeSettings.IsPemKey, homeSettings.PublicKeyPath);
+            result = await homeClient.QueryFromHome(queryRouteInfo, homeSettings.IsPemKey, homeSettings.PublicKeyPath, homeSettings.PublicKeyContent);
         }
         else
         {

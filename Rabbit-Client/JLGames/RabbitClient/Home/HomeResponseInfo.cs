@@ -30,6 +30,13 @@ namespace JLGames.RabbitClient.Home
             return $"HomeResponseInfo{{ExtCode={ExtCode}, Info={Info}, Other={Other}}}";
         }
 
+        public HomeResponseInfo(int extCode, string info, string other)
+        {
+            ExtCode = extCode;
+            Info = info;
+            Other = other;
+        }
+
         /// <summary>
         /// 从Json中解析
         /// </summary>

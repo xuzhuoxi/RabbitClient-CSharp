@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using JLGames.Infra.Crypto.Asymmetric;
 using JLGames.Infra.Crypto.Key;
 using JLGames.Infra.Crypto.Symmetric;
 using JLGames.Infra.Event;
@@ -8,29 +10,51 @@ using JLGames.RabbitClient.Server;
 
 namespace JLGames.RabbitClient
 {
-    public class RabbitClientManager : EventDispatcher
+    public class RabbitClientManager : EventDispatcher, IDisposable
     {
         private readonly HomeSettings m_HomeSettings;
+        private readonly IHttpClientProxy m_HomeHttpProxy;
+
+        private RabbitHomeClient m_HomeClient;
         private QueryRouteInfo m_QueryInfo;
         private QueryResult m_QueryResult;
-        private RabbitHomeClient m_HomeClient;
         private RabbitSocketServer m_SocketServer;
         private RabbitSocketClient m_SocketClient;
 
         public HomeSettings HomeSettings => m_HomeSettings;
-        public QueryRouteInfo QueryInfo => m_QueryInfo;
+        public IHttpClientProxy HomeHttpProxy => m_HomeHttpProxy;
         public RabbitHomeClient HomeClient => m_HomeClient;
+        public QueryRouteInfo QueryInfo => m_QueryInfo;
         public RabbitSocketServer SocketServer => m_SocketServer;
         public RabbitSocketClient SocketClient => m_SocketClient;
 
-        public RabbitClientManager(string homeUrl, bool usePost, bool enableKey, bool isPemKey, string publicKeyPath)
+        public RabbitClientManager(IHttpClientProxy homeHttpProxy, string homeUrl, bool usePost, bool enableKey, bool isPemKey, string pubKeyPath,
+            string pubKeyContent)
         {
-            m_HomeSettings = new HomeSettings(homeUrl, usePost, enableKey, isPemKey, publicKeyPath);
+            m_HomeHttpProxy = homeHttpProxy ?? throw new ArgumentNullException(nameof(homeHttpProxy));
+            m_HomeSettings = new HomeSettings(homeUrl, usePost, enableKey, isPemKey);
+
+            m_HomeClient = new RabbitHomeClient(homeHttpProxy, homeUrl, usePost);
+            m_HomeSettings.SetPublicKeyPath(pubKeyPath);
+            m_HomeSettings.SetPublicKeyContent(pubKeyContent);
         }
 
-        public RabbitClientManager(HomeSettings homeSettings)
+        public RabbitClientManager(IHttpClientProxy homeHttpProxy, HomeSettings homeSettings)
         {
-            m_HomeSettings = homeSettings;
+            m_HomeHttpProxy = homeHttpProxy ?? throw new ArgumentNullException(nameof(homeHttpProxy));
+            m_HomeSettings = homeSettings ?? throw new ArgumentNullException(nameof(homeSettings));
+            m_HomeClient = new RabbitHomeClient(homeHttpProxy, homeSettings.HomeUrl, homeSettings.UsePost);
+        }
+
+        public override void Dispose()
+        {
+            m_SocketClient?.Dispose();
+            m_SocketClient = null;
+            m_SocketServer?.Dispose();
+            m_SocketServer = null;
+            m_HomeClient?.Dispose();
+            m_HomeClient = null;
+            base.Dispose();
         }
 
         public Task ConnectThroughHome(string platformId, string typeName, byte[] tempAesKey)
@@ -58,20 +82,39 @@ namespace JLGames.RabbitClient
 
         private void PrepareConnect()
         {
-            m_HomeClient = new RabbitHomeClient(m_HomeSettings.HomeUrl, m_HomeSettings.UsePost);
+            m_SocketClient?.Dispose();
+            m_SocketServer?.Dispose();
+
             m_SocketServer = new RabbitSocketServer();
             m_SocketClient = new RabbitSocketClient(m_SocketServer);
         }
 
         private async Task DoQueryFromHome()
         {
-            QueryResult result;
-            if (m_HomeSettings.EnableKey)
-                result = await m_HomeClient.QueryFromHome(m_QueryInfo, m_HomeSettings.IsPemKey, m_HomeSettings.PublicKeyPath);
-            else
-                result = await m_HomeClient.QueryFromHome(m_QueryInfo);
+            try
+            {
+                QueryResult result;
+                if (m_HomeSettings.EnableKey)
+                {
+                    var publicCipher = RabbitHomeUtils.LoadHomePublicRsa(m_HomeSettings);
+                    m_HomeClient.SetPublicRsa(publicCipher);
+                    result = await m_HomeClient.QueryFromHome(m_QueryInfo);
+                }
+                else
+                    result = await m_HomeClient.QueryFromHome(m_QueryInfo);
 
-            HandleHomeResponse(result);
+                HandleHomeResponse(result);
+            }
+            catch (Exception e)
+            {
+                // 触发错误事件
+                DispatchEvent(RabbitClientManagerEvents.EventOnProgressHome
+                    , new RabbitClientManagerEvents.ProgressEventData<QueryResult>
+                    {
+                        Suc = false, Error = e
+                    });
+                DispatchEvent(RabbitClientManagerEvents.EventOnConnectFinish, false);
+            }
         }
 
         private void HandleHomeResponse(QueryResult result)
@@ -107,21 +150,32 @@ namespace JLGames.RabbitClient
 
         private void DoConnectServer(QueryRouteBackInfo serverInfo)
         {
-            m_SocketServer.AddEventListener(RabbitSocketServerEvents.EventOnConnectionOpenSuc, OnServerOpenSuc);
-            m_SocketServer.AddEventListener(RabbitSocketServerEvents.EventOnConnectionOpenFail, OnServerOpenFail);
-            m_SocketServer.AddEventListener(RabbitSocketServerEvents.EventOnConnectionClose, OnServerClose);
+            AddServerListeners();
             m_SocketServer.ConnectServer(serverInfo);
         }
 
-        private void OnServerClose(EventData evd)
+        private void AddServerListeners()
+        {
+            m_SocketServer.AddEventListener(RabbitSocketServerEvents.EventOnConnectionOpenSuc, OnServerOpenSuc);
+            m_SocketServer.AddEventListener(RabbitSocketServerEvents.EventOnConnectionOpenFail, OnServerOpenFail);
+            m_SocketServer.AddEventListener(RabbitSocketServerEvents.EventOnConnectionClose, OnServerClose);
+        }
+
+        private void RemoveServerListeners()
         {
             m_SocketServer.RemoveEventListener(RabbitSocketServerEvents.EventOnConnectionClose, OnServerClose);
             m_SocketServer.RemoveEventListener(RabbitSocketServerEvents.EventOnConnectionOpenFail, OnServerOpenFail);
             m_SocketServer.RemoveEventListener(RabbitSocketServerEvents.EventOnConnectionOpenSuc, OnServerOpenSuc);
         }
 
+        private void OnServerClose(EventData evd)
+        {
+            RemoveServerListeners();
+        }
+
         private void OnServerOpenFail(EventData evd)
         {
+            RemoveServerListeners();
             var info = (SocketEvents.SocketConnEventInfo)evd.Data;
             DispatchEvent(RabbitClientManagerEvents.EventOnProgressServer,
                 new RabbitClientManagerEvents.ProgressEventData<SocketEvents.SocketConnEventInfo>
@@ -133,8 +187,9 @@ namespace JLGames.RabbitClient
 
         private void OnServerOpenSuc(EventData evd)
         {
+            RemoveServerListeners();
             var info = (SocketEvents.SocketConnEventInfo)evd.Data;
-            if (null != m_QueryResult.SucInfo.OpenSk)
+            if (m_QueryResult.SucInfo?.OpenSk != null)
             {
                 var cipher = new AesCipher(m_QueryResult.SucInfo.OpenSk);
                 m_SocketClient.SetSymmetricCipher(cipher);

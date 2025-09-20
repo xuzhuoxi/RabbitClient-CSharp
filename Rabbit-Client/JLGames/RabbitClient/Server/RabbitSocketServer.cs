@@ -1,3 +1,4 @@
+using System;
 using System.Net.Sockets;
 using JLGames.Infra.Event;
 using JLGames.Infra.Net;
@@ -27,6 +28,10 @@ namespace JLGames.RabbitClient.Server
         /// </summary>
         public bool Connected => m_Connected;
 
+        public RabbitSocketServer()
+        {
+        }
+
         /// <summary>
         /// 设置线程上下文
         /// </summary>
@@ -47,9 +52,16 @@ namespace JLGames.RabbitClient.Server
         public void ConnectServer(QueryRouteBackInfo serverInfo)
         {
             if (m_Connecting || m_Connected) return;
-            if (null == serverInfo || null != m_ServerInfo) return;
+            if (null == serverInfo) throw new ArgumentNullException(nameof(serverInfo));
+            if (null != m_ServerInfo) return;
             m_ServerInfo = serverInfo;
             StartConnect();
+        }
+
+        public override void Dispose()
+        {
+            DisconnectServer();
+            base.Dispose();
         }
 
         /// <summary>
@@ -59,7 +71,25 @@ namespace JLGames.RabbitClient.Server
         {
             if (!m_Connected) return;
             m_Connecting = true;
-            m_SocketServer.DisconnectServer();
+            try
+            {
+                if (null != m_SocketServer)
+                {
+                    m_SocketServer.RemoveEventListener(SocketEvents.EventOnConnectionClose, OnConnectionClose);
+                    m_SocketServer.RemoveEventListener(SocketEvents.EventOnMessageReceivedEnd, OnReceivedEnd);
+                    m_SocketServer.RemoveEventListener(SocketEvents.EventOnMessageReceived, OnReceivedMessage);
+
+                    m_SocketServer.RemoveEventListener(SocketEvents.EventOnConnectionOpen, OnConnect);
+                    m_SocketServer.DisconnectServer();
+                }
+            }
+            finally
+            {
+                m_Connecting = false;
+                m_Connected = false;
+                m_ServerInfo = null;
+                m_SocketServer = null;
+            }
         }
 
         private void StartConnect()
@@ -82,7 +112,6 @@ namespace JLGames.RabbitClient.Server
 
         private void OnConnect(EventData evd)
         {
-            m_Connecting = false;
             var info = (SocketEvents.SocketConnEventInfo)evd.Data;
             if (!info.Suc || info.Error != SocketError.Success || info.Exception != null)
             {
@@ -90,17 +119,21 @@ namespace JLGames.RabbitClient.Server
                 return;
             }
 
-            m_Connected = true;
             OnConnectSuc(info);
         }
 
         private void OnConnectFail(SocketEvents.SocketConnEventInfo info)
         {
+            m_ServerInfo = null;
+            m_Connecting = false;
+            m_Connected = false;
             DispatchEvent(RabbitSocketServerEvents.EventOnConnectionOpenFail, info);
         }
 
         private void OnConnectSuc(SocketEvents.SocketConnEventInfo info)
         {
+            m_Connecting = false;
+            m_Connected = true;
             DispatchEvent(RabbitSocketServerEvents.EventOnConnectionOpenSuc, info);
             m_SocketServer.AddEventListener(SocketEvents.EventOnMessageReceived, OnReceivedMessage);
             m_SocketServer.AddEventListener(SocketEvents.EventOnMessageReceivedEnd, OnReceivedEnd);
@@ -126,6 +159,7 @@ namespace JLGames.RabbitClient.Server
             m_SocketServer.RemoveEventListener(SocketEvents.EventOnConnectionClose, OnConnectionClose);
             m_Connected = false;
             m_Connecting = false;
+            m_ServerInfo = null;
             DispatchEvent(RabbitSocketServerEvents.EventOnConnectionClose, evd.Data);
         }
     }

@@ -1,3 +1,5 @@
+using System;
+
 namespace JLGames.RabbitClient
 {
     public static class RabbitClientManagerEvents
@@ -7,10 +9,12 @@ namespace JLGames.RabbitClient
             public bool Suc { get; internal set; }
             public T Data { get; internal set; }
 
+            public Exception Error { get; internal set; }
+
             public override string ToString()
             {
                 return
-                    $"ProgressEventData<{Data.GetType().Name}>{{Suc={Suc}, Data={Data}}}";
+                    $"ProgressEventData<{Data.GetType().Name}>{{Suc={Suc}, Data={Data}, Error={Error}}}";
             }
         }
 
@@ -33,6 +37,6 @@ namespace JLGames.RabbitClient
         /// 连接成功事件
         /// Event data(事件数据)：null
         /// </summary>
-        public const string EventOnConnectFinish = "RabbitClientManagerEvents.EventOnLinkSuc";
+        public const string EventOnConnectFinish = "RabbitClientManagerEvents.EventOnConnectFinish";
     }
 }

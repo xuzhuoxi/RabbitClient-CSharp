@@ -9,9 +9,9 @@ namespace JLGames.RabbitClient.Server
     public class RabbitSocketClient : IDisposable
     {
         private ICipher m_SymmetricCipher;
-        private readonly RabbitSocketServer m_SocketServer;
-        private readonly IEventDispatcher m_Dispatcher;
-        private readonly EventDispatcherPool m_DispatcherPool;
+        private RabbitSocketServer m_SocketServer;
+        private IEventDispatcher m_Dispatcher;
+        private EventDispatcherPool m_DispatcherPool;
         private FixedThreadContext m_Context;
 
         public bool Connected => m_SocketServer.Connected;
@@ -20,7 +20,7 @@ namespace JLGames.RabbitClient.Server
 
         public RabbitSocketClient(RabbitSocketServer socketServer)
         {
-            m_SocketServer = socketServer;
+            m_SocketServer = socketServer ?? throw new ArgumentNullException(nameof(socketServer));
             m_Dispatcher = new EventDispatcher();
             m_DispatcherPool = new EventDispatcherPool();
         }
@@ -75,38 +75,58 @@ namespace JLGames.RabbitClient.Server
         /// <param name="msg"></param>
         public void SendMessage(IRabbitMessageWriter msg)
         {
-            if (!m_SocketServer.Connected || null == msg) return;
+            if (null == m_SocketServer || !m_SocketServer.Connected || null == msg) return;
             var msgBytes = msg.ToMessageBytes();
             if (null == msgBytes || msgBytes.Length == 0) return;
             // Console.WriteLine($"SendMessage[{msgBytes.Length}]: [{string.Join(" ", msgBytes)}]");
-            if (null != m_SymmetricCipher)
+            try
             {
-                msgBytes = m_SymmetricCipher.Encrypt(msgBytes);
-                // Console.WriteLine($"SendMessage2[{msgBytes.Length}]: [{string.Join(" ", msgBytes)}]");
-            }
+                if (null != m_SymmetricCipher)
+                {
+                    msgBytes = m_SymmetricCipher.Encrypt(msgBytes);
+                    // Console.WriteLine($"SendMessage2[{msgBytes.Length}]: [{string.Join(" ", msgBytes)}]");
+                }
 
-            m_SocketServer.SocketServer.SendMessage(msgBytes);
+                m_SocketServer.SocketServer.SendMessage(msgBytes);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         private void OnReceivedMessage(EventData evd)
         {
             var msgBytes = evd.Data as byte[];
-            if (null != msgBytes && msgBytes.Length > 0 && null != m_SymmetricCipher)
+            try
             {
-                msgBytes = m_SymmetricCipher.Decrypt(msgBytes);
-            }
+                if (null != msgBytes && msgBytes.Length > 0 && null != m_SymmetricCipher)
+                {
+                    msgBytes = m_SymmetricCipher.Decrypt(msgBytes);
+                }
 
-            var msgReader = new RabbitResponseMsg(RabbitServerDefaults.LittleEndian);
-            msgReader.SetMessageBytes(msgBytes);
-            msgReader.StartReadData();
-            m_DispatcherPool.GetInstance(msgReader.Extension, true).DispatchEvent(msgReader.ProtoUid, msgReader);
-            m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessage, msgReader);
+                var msgReader = new RabbitResponseMsg(RabbitServerDefaults.LittleEndian);
+                msgReader.SetMessageBytes(msgBytes);
+                msgReader.StartReadData();
+                m_DispatcherPool.GetInstance(msgReader.Extension, true).DispatchEvent(msgReader.ProtoUid, msgReader);
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessage, msgReader);
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         public void Dispose()
         {
-            m_DispatcherPool.ClearAll();
-            m_Dispatcher.Dispose();
+            StopReceiving();
+
+            m_DispatcherPool?.ClearAll();
+            m_Dispatcher?.Dispose();
+
+            m_SocketServer = null;
+            m_DispatcherPool = null;
+            m_Dispatcher = null;
         }
     }
 }
