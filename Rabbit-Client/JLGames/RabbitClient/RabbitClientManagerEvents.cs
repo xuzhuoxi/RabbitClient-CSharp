@@ -35,7 +35,7 @@ namespace JLGames.RabbitClient
         /// <summary>
         /// Connect success event
         /// 连接成功事件
-        /// Event data(事件数据)：null
+        /// Event data(事件数据)：True | False
         /// </summary>
         public const string EventOnConnectFinish = "RabbitClientManagerEvents.EventOnConnectFinish";
     }
