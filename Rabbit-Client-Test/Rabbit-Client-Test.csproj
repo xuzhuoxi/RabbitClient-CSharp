@@ -23,15 +23,10 @@
     <ItemGroup>
         <Using Include="NUnit.Framework"/>
     </ItemGroup>
-	
-	<ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Infra-CSharp\Infra-CSharp\Infra-CSharp.csproj" />
       <ProjectReference Include="..\Rabbit-Client\Rabbit-Client.csproj" />
     </ItemGroup>
-	
-	<ItemGroup>
-	  <Reference Include="Infra-CSharp">
-	    <HintPath>..\..\..\Infra-CSharp\Infra-CSharp\bin\Debug\netstandard2.0\Infra-CSharp.dll</HintPath>
-	  </Reference>
-	</ItemGroup>
 
 </Project>

@@ -25,7 +25,8 @@ public class ManagerTest
     public async Task TestManagerLink()
     {
         var pubKeyPath = Path.Combine(s_BasePath!, "Resources/Home", "x509_public.pem");
-        var manager = new RabbitClientManager(c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey, pubKeyPath);
+        var httpProxy = new HttpClientProxy(c_HomeUrl);
+        var manager = new RabbitClientManager(httpProxy, c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey, pubKeyPath, null);
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnProgressHome, OnManagerProgressHome);
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnProgressServer, OnManagerProgressServer);
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnConnectFinish, OnLinkFinish);

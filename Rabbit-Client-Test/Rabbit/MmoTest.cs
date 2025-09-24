@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JLGames.Infra.Event;
 using JLGames.Infra.Mathx;
+using JLGames.Infra.Net;
 using JLGames.Infra.TinyJson;
 using JLGames.RabbitClient;
 using JLGames.RabbitClient.Server;
@@ -51,7 +52,8 @@ public class MmoTest
     public async Task TestManagerLink()
     {
         var pubKeyPath = Path.Combine(s_BasePath!, "Resources/Home", "x509_public.pem");
-        var manager = new RabbitClientManager(c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey, pubKeyPath);
+        var httpProxy = new HttpClientProxy(c_HomeUrl);
+        var manager = new RabbitClientManager(httpProxy, c_HomeUrl, c_UsePost, c_EnableKey, c_IsPemKey, pubKeyPath, null);
         m_RabbitClientManager = manager;
         manager.OnceEventListener(RabbitClientManagerEvents.EventOnConnectFinish, OnLinkFinish);
         await manager.ConnectThroughHome(c_PlatformId, c_TypeName, true);

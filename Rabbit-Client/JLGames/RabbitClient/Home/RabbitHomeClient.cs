@@ -23,6 +23,24 @@ namespace JLGames.RabbitClient.Home
 
         public string HomeUrl => m_HomeUrl;
 
+        public RabbitHomeClient(string homeUrl, bool usePost)
+        {
+            m_HomeUrl = homeUrl.Trim();
+            m_HttpProxy = new HttpClientProxy(m_HomeUrl);
+            m_HomeUri = new Uri(m_HomeUrl);
+            m_UsePost = usePost;
+            m_Timeout = TimeSpan.FromSeconds(100);
+        }
+
+        public RabbitHomeClient(string homeUrl, bool usePost, TimeSpan timeout)
+        {
+            m_HomeUrl = homeUrl.Trim();
+            m_HttpProxy = new HttpClientProxy(m_HomeUrl);
+            m_HomeUri = new Uri(m_HomeUrl);
+            m_UsePost = usePost;
+            m_Timeout = timeout;
+        }
+
         public RabbitHomeClient(IHttpClientProxy httpProxyProxy, string homeUrl, bool usePost)
         {
             m_HttpProxy = httpProxyProxy;
