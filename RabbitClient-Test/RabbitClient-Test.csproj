@@ -26,7 +26,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Infra-CSharp\Infra-CSharp\Infra-CSharp.csproj" />
-      <ProjectReference Include="..\Rabbit-Client\Rabbit-Client.csproj" />
+      <ProjectReference Include="..\RabbitClient\RabbitClient.csproj" />
     </ItemGroup>
 
 </Project>

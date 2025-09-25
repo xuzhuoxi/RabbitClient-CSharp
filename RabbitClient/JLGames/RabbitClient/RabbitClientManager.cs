@@ -62,7 +62,7 @@ namespace JLGames.RabbitClient
             return ConnectThroughHome(new QueryRouteInfo { PlatformId = platformId, TypeName = typeName, TempAesKey = tempAesKey });
         }
 
-        public Task ConnectThroughHome(string platformId, string typeName, bool randomAesKey, string passphrase = "Rabbit-Client")
+        public Task ConnectThroughHome(string platformId, string typeName, bool randomAesKey, string passphrase = "RabbitClient")
         {
             var queryRouteInfo = new QueryRouteInfo { PlatformId = platformId, TypeName = typeName };
             if (randomAesKey)
