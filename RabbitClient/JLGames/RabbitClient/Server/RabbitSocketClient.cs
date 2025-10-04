@@ -25,6 +25,11 @@ namespace JLGames.RabbitClient.Server
             m_DispatcherPool = new EventDispatcherPool();
         }
 
+        public IEventDispatcher GetExtensionDispatcher(string extensionName)
+        {
+            return m_DispatcherPool.GetInstance(extensionName, true);
+        }
+
         /// <summary>
         /// 设置线程上下文
         /// </summary>
@@ -108,7 +113,7 @@ namespace JLGames.RabbitClient.Server
                 var msgReader = new RabbitResponseMsg(RabbitServerDefaults.LittleEndian);
                 msgReader.SetMessageBytes(msgBytes);
                 msgReader.StartReadData();
-                m_DispatcherPool.GetInstance(msgReader.Extension, true).DispatchEvent(msgReader.ProtoUid, msgReader);
+                GetExtensionDispatcher(msgReader.Extension).DispatchEvent(msgReader.ProtoUid, msgReader);
                 m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessage, msgReader);
             }
             catch
