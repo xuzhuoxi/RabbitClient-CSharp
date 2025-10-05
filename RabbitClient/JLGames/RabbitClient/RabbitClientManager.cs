@@ -5,6 +5,7 @@ using JLGames.Infra.Crypto.Key;
 using JLGames.Infra.Crypto.Symmetric;
 using JLGames.Infra.Event;
 using JLGames.Infra.Net;
+using JLGames.Infra.Threadx;
 using JLGames.RabbitClient.Home;
 using JLGames.RabbitClient.Server;
 
@@ -15,6 +16,7 @@ namespace JLGames.RabbitClient
         private readonly HomeSettings m_HomeSettings;
         private readonly IHttpClientProxy m_HomeHttpProxy;
 
+        private FixedThreadContext m_ThreadContext;
         private RabbitHomeClient m_HomeClient;
         private QueryRouteInfo m_QueryInfo;
         private QueryResult m_QueryResult;
@@ -57,6 +59,19 @@ namespace JLGames.RabbitClient
             base.Dispose();
         }
 
+        /// <summary>
+        /// 设置线程上下文
+        /// </summary>
+        /// <param name="context"></param>
+        public void SetThreadContext(FixedThreadContext context)
+        {
+            m_ThreadContext = context;
+            if (null != m_SocketServer)
+            {
+                m_SocketServer.SetThreadContext(context);
+            }
+        }
+
         public Task ConnectThroughHome(string platformId, string typeName, byte[] tempAesKey)
         {
             return ConnectThroughHome(new QueryRouteInfo { PlatformId = platformId, TypeName = typeName, TempAesKey = tempAesKey });
@@ -86,6 +101,7 @@ namespace JLGames.RabbitClient
             m_SocketServer?.Dispose();
 
             m_SocketServer = new RabbitSocketServer();
+            m_SocketServer.SetThreadContext(m_ThreadContext);
             m_SocketClient = new RabbitSocketClient(m_SocketServer);
         }
 

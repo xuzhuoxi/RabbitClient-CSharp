@@ -12,7 +12,6 @@ namespace JLGames.RabbitClient.Server
         private RabbitSocketServer m_SocketServer;
         private IEventDispatcher m_Dispatcher;
         private EventDispatcherPool m_DispatcherPool;
-        private FixedThreadContext m_Context;
 
         public bool Connected => m_SocketServer.Connected;
 
@@ -28,19 +27,6 @@ namespace JLGames.RabbitClient.Server
         public IEventDispatcher GetExtensionDispatcher(string extensionName)
         {
             return m_DispatcherPool.GetInstance(extensionName, true);
-        }
-
-        /// <summary>
-        /// 设置线程上下文
-        /// </summary>
-        /// <param name="context"></param>
-        public void SetThreadContext(FixedThreadContext context)
-        {
-            m_Context = context;
-            if (null != m_SocketServer)
-            {
-                m_SocketServer.SetThreadContext(context);
-            }
         }
 
         /// <summary>
