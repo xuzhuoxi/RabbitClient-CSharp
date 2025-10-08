@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using JLGames.Infra.Event;
 using JLGames.Infra.Net;
 using JLGames.Infra.Threadx;
@@ -10,7 +11,7 @@ namespace JLGames.RabbitClient.Server
     public class RabbitSocketServer : EventDispatcher
     {
         private QueryRouteBackInfo m_ServerInfo;
-        private FixedThreadContext m_ThreadContext;
+        private SynchronizationContext m_ThreadContext;
 
         private ISocketClient m_SocketServer;
         private bool m_Connecting;
@@ -36,7 +37,7 @@ namespace JLGames.RabbitClient.Server
         /// 设置线程上下文
         /// </summary>
         /// <param name="context"></param>
-        public void SetThreadContext(FixedThreadContext context)
+        public void SetThreadContext(SynchronizationContext context)
         {
             m_ThreadContext = context;
             if (null != m_SocketServer)
@@ -89,6 +90,7 @@ namespace JLGames.RabbitClient.Server
                 m_Connected = false;
                 m_ServerInfo = null;
                 m_SocketServer = null;
+                m_ThreadContext = null;
             }
         }
 
