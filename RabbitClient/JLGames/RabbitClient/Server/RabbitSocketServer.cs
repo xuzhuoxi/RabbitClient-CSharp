@@ -11,7 +11,7 @@ namespace JLGames.RabbitClient.Server
     public class RabbitSocketServer : EventDispatcher
     {
         private QueryRouteBackInfo m_ServerInfo;
-        private SynchronizationContext m_ThreadContext;
+        private SynchronizationContext m_ThreadSocketContext;
 
         private ISocketClient m_SocketServer;
         private bool m_Connecting;
@@ -37,9 +37,9 @@ namespace JLGames.RabbitClient.Server
         /// 设置线程上下文
         /// </summary>
         /// <param name="context"></param>
-        public void SetThreadContext(SynchronizationContext context)
+        public void SetThreadSocketContext(SynchronizationContext context)
         {
-            m_ThreadContext = context;
+            m_ThreadSocketContext = context;
             if (null != m_SocketServer)
             {
                 m_SocketServer.SetContext(context);
@@ -90,7 +90,7 @@ namespace JLGames.RabbitClient.Server
                 m_Connected = false;
                 m_ServerInfo = null;
                 m_SocketServer = null;
-                m_ThreadContext = null;
+                m_ThreadSocketContext = null;
             }
         }
 
@@ -99,7 +99,7 @@ namespace JLGames.RabbitClient.Server
             m_Connecting = true;
             m_SocketServer =
                 SocketFactory.CreateSocketClient(m_ServerInfo.Id, RabbitServerDefaults.LittleEndian, RabbitServerDefaults.ApmMode);
-            m_SocketServer.SetContext(m_ThreadContext);
+            m_SocketServer.SetContext(m_ThreadSocketContext);
 
             m_SocketServer.OnceEventListener(SocketEvents.EventOnConnectionOpen, OnConnect);
             m_SocketServer.ConnectServer(new SocketParams

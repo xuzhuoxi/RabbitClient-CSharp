@@ -17,7 +17,7 @@ namespace JLGames.RabbitClient
         private readonly HomeSettings m_HomeSettings;
         private readonly IHttpClientProxy m_HomeHttpProxy;
 
-        private SynchronizationContext m_ThreadContext;
+        private SynchronizationContext m_ThreadSocketContext;
         private RabbitHomeClient m_HomeClient;
         private QueryRouteInfo m_QueryInfo;
         private QueryResult m_QueryResult;
@@ -64,12 +64,12 @@ namespace JLGames.RabbitClient
         /// 设置线程上下文
         /// </summary>
         /// <param name="context"></param>
-        public void SetThreadContext(SynchronizationContext context)
+        public void SetThreadSocketContext(SynchronizationContext context)
         {
-            m_ThreadContext = context;
+            m_ThreadSocketContext = context;
             if (null != m_SocketServer)
             {
-                m_SocketServer.SetThreadContext(context);
+                m_SocketServer.SetThreadSocketContext(context);
             }
         }
 
@@ -102,7 +102,7 @@ namespace JLGames.RabbitClient
             m_SocketServer?.Dispose();
 
             m_SocketServer = new RabbitSocketServer();
-            m_SocketServer.SetThreadContext(m_ThreadContext);
+            m_SocketServer.SetThreadSocketContext(m_ThreadSocketContext);
             m_SocketClient = new RabbitSocketClient(m_SocketServer);
         }
 
