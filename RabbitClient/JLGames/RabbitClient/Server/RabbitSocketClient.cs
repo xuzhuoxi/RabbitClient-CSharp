@@ -1,7 +1,6 @@
 using System;
 using JLGames.Infra.Crypto;
 using JLGames.Infra.Event;
-using JLGames.Infra.Threadx;
 using JLGames.RabbitClient.Server.Message;
 
 namespace JLGames.RabbitClient.Server
@@ -99,7 +98,7 @@ namespace JLGames.RabbitClient.Server
                 var msgReader = new RabbitResponseMsg(RabbitServerDefaults.LittleEndian);
                 msgReader.SetMessageBytes(msgBytes);
                 msgReader.StartReadData();
-                GetExtensionDispatcher(msgReader.Extension).DispatchEvent(msgReader.ProtoUid, msgReader);
+                GetExtensionDispatcher(msgReader.Extension).DispatchEvent(msgReader.ProtoId, msgReader);
                 m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessage, msgReader);
             }
             catch
