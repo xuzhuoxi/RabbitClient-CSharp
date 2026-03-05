@@ -13,24 +13,24 @@ namespace JLGames.RabbitClient.Server.MMO
         /// <summary>
         /// Unit vars notify
         /// 单位变量变更
-        /// Event Data： NotifyUnitVarData
-        /// 事件数据： NotifyUnitVarData
+        /// Event Data： NotifyUnitVarsData
+        /// 事件数据： NotifyUnitVarsData
         /// </summary>
-        public const string NotifyUnitVar = "UnitEvents.NotifyUnitVar";
+        public const string NotifyUnitVars = "UnitEvents.NotifyUnitVars";
 
         /// <summary>
         /// Unit vars notify del
         /// 单位变量删除
-        /// Event Data： NotifyUnitVarDelData
-        /// 事件数据： NotifyUnitVarDelData
+        /// Event Data： NotifyUnitDelVars
+        /// 事件数据： NotifyUnitDelVars
         /// </summary>
-        public const string NotifyUnitVarDel = "UnitEvents.NotifyUnitVarDel";
+        public const string NotifyUnitDelVars = "UnitEvents.NotifyUnitDelVars";
 
         /// <summary>
         /// Unit pos notify
         /// 单位坐标变更
-        /// Event Data： NotifyUnitVarData
-        /// 事件数据： NotifyUnitVarData
+        /// Event Data： NotifyUnitVarsData
+        /// 事件数据： NotifyUnitVarsData
         /// </summary>
         public const string NotifyUnitVarPos = "UnitEvents.NotifyUnitVarPos";
 
@@ -85,20 +85,10 @@ namespace JLGames.RabbitClient.Server.MMO
         /// Unit var update event data
         /// 单位变量更新 事件数据
         /// </summary>
-        public class NotifyUnitVarData
+        public class NotifyUnitVarsData
         {
             public string UnitId;
             public IVarSet VarSet;
-        }
-
-        /// <summary>
-        /// Unit var del event data
-        /// 单位变量删除 事件数据
-        /// </summary>
-        public class NotifyUnitVarDelData
-        {
-            public string UnitId;
-            public string[] Keys;
         }
     }
 }

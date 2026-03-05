@@ -36,7 +36,7 @@ namespace JLGames.RabbitClient.Server.MMO
         /// 设置变量值
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="value">Basic data types and their array types;V3Int;V2Int</param>
         void SetVar(string key, object value);
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace JLGames.RabbitClient.Server.MMO
         /// 设置变量值
         /// </summary>
         /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="value">Basic data types and their array types;V3Int;V2Int</param>
         /// <param name="timestamp"></param>
         void SetVar(string key, object value, long timestamp);
 
@@ -117,6 +117,7 @@ namespace JLGames.RabbitClient.Server.MMO
         /// 获取值
         /// </summary>
         /// <param name="key"></param>
+        /// <typeparam name="T">Basic data types and their array types;V3Int;V2Int</typeparam>
         /// <returns></returns>
         T GetValue<T>(string key);
 

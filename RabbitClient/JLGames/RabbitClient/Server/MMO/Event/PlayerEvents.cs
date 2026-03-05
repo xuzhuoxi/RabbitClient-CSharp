@@ -21,24 +21,24 @@ namespace JLGames.RabbitClient.Server.MMO
         /// <summary>
         /// Player vars notify
         /// 玩家变量变更
-        /// Event Data： NotifyPlayerVarData
-        /// 事件数据： NotifyPlayerVarData
+        /// Event Data： NotifyPlayerVarsData
+        /// 事件数据： NotifyPlayerVarsData
         /// </summary>
-        public const string NotifyPlayerVar = "PlayerEvents.NotifyPlayerVar";
+        public const string NotifyPlayerVars = "PlayerEvents.NotifyPlayerVars";
 
         /// <summary>
         /// Player vars notify del
         /// 玩家变量删除
-        /// Event Data： NotifyPlayerVarDelData
-        /// 事件数据： NotifyPlayerVarDelData
+        /// Event Data： NotifyPlayerDelVars
+        /// 事件数据： NotifyPlayerDelVars
         /// </summary>
-        public const string NotifyPlayerVarDel = "PlayerEvents.NotifyPlayerVarDel";
+        public const string NotifyPlayerDelVars = "PlayerEvents.NotifyPlayerDelVars";
 
         /// <summary>
         /// Player pos notify
         /// 玩家坐标变更
-        /// Event Data： NotifyPlayerVarData
-        /// 事件数据： NotifyPlayerVarData
+        /// Event Data： NotifyPlayerVarsData
+        /// 事件数据： NotifyPlayerVarsData
         /// </summary>
         public const string NotifyPlayerVarPos = "PlayerEvents.NotifyPlayerVarPos";
 
@@ -67,20 +67,10 @@ namespace JLGames.RabbitClient.Server.MMO
         /// Player var update event data
         /// 玩家变量更新事件数据
         /// </summary>
-        public class NotifyPlayerVarData
+        public class NotifyPlayerVarsData
         {
             public string PlayerId;
             public IVarSet VarSet;
-        }
-
-        /// <summary>
-        /// Player var del event data
-        /// 玩家变量删除事件数据
-        /// </summary>
-        public class NotifyPlayerVarDelData
-        {
-            public string PlayerId;
-            public string[] Keys;
         }
     }
 }
