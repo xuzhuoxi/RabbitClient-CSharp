@@ -79,9 +79,10 @@ namespace JLGames.RabbitClient.Server
 
                 m_SocketServer.SocketServer.SendMessage(msgBytes);
             }
-            catch
+            catch (Exception e)
             {
-                // ignored
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessageFailed,
+                    new RabbitSocketClientEvents.FailedInfo { IsSend = true, FailedException = e, OriginalBytes = msgBytes });
             }
         }
 
@@ -101,9 +102,10 @@ namespace JLGames.RabbitClient.Server
                 GetExtensionDispatcher(msgReader.Extension).DispatchEvent(msgReader.ProtoId, msgReader);
                 m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessage, msgReader);
             }
-            catch
+            catch (Exception e)
             {
-                // ignored
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessageFailed,
+                    new RabbitSocketClientEvents.FailedInfo { IsSend = false, FailedException = e, OriginalBytes = msgBytes });
             }
         }
 
