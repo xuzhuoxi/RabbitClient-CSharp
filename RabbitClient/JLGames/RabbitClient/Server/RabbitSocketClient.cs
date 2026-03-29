@@ -68,20 +68,24 @@ namespace JLGames.RabbitClient.Server
             if (null == m_SocketServer || !m_SocketServer.Connected || null == msg) return;
             var msgBytes = msg.ToMessageBytes();
             if (null == msgBytes || msgBytes.Length == 0) return;
-            // Console.WriteLine($"SendMessage[{msgBytes.Length}]: [{string.Join(" ", msgBytes)}]");
+            var msgContent = new RabbitSocketClientEvents.MessageContent();
+            msgContent.SetHeaderInfo(msg.Extension, msg.ProtoId, msg.ClientId);
+            msgContent.SetMessageContent(msgBytes);
+            m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientSendMessagePrepare, msgContent);
             try
             {
                 if (null != m_SymmetricCipher)
                 {
                     msgBytes = m_SymmetricCipher.Encrypt(msgBytes);
-                    // Console.WriteLine($"SendMessage2[{msgBytes.Length}]: [{string.Join(" ", msgBytes)}]");
+                    msgContent.SetMessageContent(msgBytes);
                 }
 
                 m_SocketServer.SocketServer.SendMessage(msgBytes);
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientSendMessage, msgContent);
             }
             catch (Exception e)
             {
-                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessageFailed,
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientReceiveMessageFailed,
                     new RabbitSocketClientEvents.FailedInfo { IsSend = true, FailedException = e, OriginalBytes = msgBytes });
             }
         }
@@ -100,11 +104,11 @@ namespace JLGames.RabbitClient.Server
                 msgReader.SetMessageBytes(msgBytes);
                 msgReader.StartReadData();
                 GetExtensionDispatcher(msgReader.Extension).DispatchEvent(msgReader.ProtoId, msgReader);
-                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessage, msgReader);
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientReceiveMessage, msgReader);
             }
             catch (Exception e)
             {
-                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientMessageFailed,
+                m_Dispatcher.DispatchEvent(RabbitSocketClientEvents.EventOnClientReceiveMessageFailed,
                     new RabbitSocketClientEvents.FailedInfo { IsSend = false, FailedException = e, OriginalBytes = msgBytes });
             }
         }

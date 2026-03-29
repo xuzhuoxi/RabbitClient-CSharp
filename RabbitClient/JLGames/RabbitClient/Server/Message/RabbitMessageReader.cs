@@ -6,17 +6,17 @@ namespace JLGames.RabbitClient.Server.Message
 {
     public class RabbitMessageReader : IRabbitMessageReader
     {
-        internal RabbitHeader m_Header;
+        internal RabbitMessageHeader m_MessageHeader;
         protected readonly INetMessageReader m_Unpacker;
 
-        public string Extension => m_Header.Extension;
-        public string ProtoId => m_Header.ProtoId;
-        public string ClientId => m_Header.ClientId;
-        public string ProtoUid => m_Header.ProtoUid;
+        public string Extension => m_MessageHeader.Extension;
+        public string ProtoId => m_MessageHeader.ProtoId;
+        public string ClientId => m_MessageHeader.ClientId;
+        public string ProtoUid => m_MessageHeader.ProtoUid;
 
         public RabbitMessageReader(bool littleEndian = true)
         {
-            m_Header = new RabbitHeader();
+            m_MessageHeader = new RabbitMessageHeader();
             m_Unpacker = new NetMessageReader(littleEndian);
         }
 
@@ -28,7 +28,7 @@ namespace JLGames.RabbitClient.Server.Message
             var extension = m_Unpacker.ReadString();
             var protoId = m_Unpacker.ReadString();
             var cId = m_Unpacker.ReadString();
-            m_Header.SetHeaderInfo(extension, protoId, cId);
+            m_MessageHeader.SetHeaderInfo(extension, protoId, cId);
         }
 
         public void ReadMessageTo(INetMessage message)

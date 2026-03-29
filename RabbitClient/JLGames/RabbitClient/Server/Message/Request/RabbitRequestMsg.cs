@@ -13,13 +13,13 @@ namespace JLGames.RabbitClient.Server.Message
 
         public void SetClientId(string cid)
         {
-            m_Header.ClientId = cid;
+            m_MessageHeader.ClientId = cid;
         }
 
         public void SetProtoInfo(string extName, string protoId)
         {
-            m_Header.Extension = extName;
-            m_Header.ProtoId = protoId;
+            m_MessageHeader.Extension = extName;
+            m_MessageHeader.ProtoId = protoId;
         }
 
         public void StartWriteData()

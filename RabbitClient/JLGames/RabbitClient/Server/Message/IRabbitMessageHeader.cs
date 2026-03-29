@@ -1,6 +1,6 @@
 ﻿namespace JLGames.RabbitClient.Server.Message
 {
-    public interface IRabbitMessage
+    public interface IRabbitMessageHeader
     {
         /// <summary>
         /// Extension Name

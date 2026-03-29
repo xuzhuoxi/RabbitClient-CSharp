@@ -2,7 +2,7 @@
 
 namespace JLGames.RabbitClient.Server.Message
 {
-    public interface IRabbitMessageWriter : IRabbitMessage
+    public interface IRabbitMessageWriter : IRabbitMessageHeader
     {
         /// <summary>
         /// Set the message header, and write it to the buff.

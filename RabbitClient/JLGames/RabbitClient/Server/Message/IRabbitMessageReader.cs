@@ -3,7 +3,7 @@ using JLGames.Infra.Net;
 
 namespace JLGames.RabbitClient.Server.Message
 {
-    public interface IRabbitMessageReader : IRabbitMessage, IDataBufferReader, IDataBufferCopier, IByteBufferReader, IByteBufferCopier
+    public interface IRabbitMessageReader : IRabbitMessageHeader, IDataBufferReader, IDataBufferCopier, IByteBufferReader, IByteBufferCopier
     {
         /// <summary>
         /// Is there any data left to read

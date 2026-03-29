@@ -1,6 +1,6 @@
 ﻿namespace JLGames.RabbitClient.Server.Message
 {
-    internal struct RabbitHeader
+    public struct RabbitMessageHeader
     {
         public string Extension;
         public string ProtoId;

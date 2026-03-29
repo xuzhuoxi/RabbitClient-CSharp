@@ -5,31 +5,31 @@ namespace JLGames.RabbitClient.Server.Message
 {
     public class RabbitMessageWriter : IRabbitMessageWriter
     {
-        internal RabbitHeader m_Header;
+        internal RabbitMessageHeader m_MessageHeader;
         protected readonly INetMessageWriter m_Packer;
 
-        public string Extension => m_Header.Extension;
-        public string ProtoId => m_Header.ProtoId;
-        public string ClientId => m_Header.ClientId;
-        public string ProtoUid => m_Header.ProtoUid;
+        public string Extension => m_MessageHeader.Extension;
+        public string ProtoId => m_MessageHeader.ProtoId;
+        public string ClientId => m_MessageHeader.ClientId;
+        public string ProtoUid => m_MessageHeader.ProtoUid;
 
         public RabbitMessageWriter(bool littleEndian = true)
         {
-            m_Header = new RabbitHeader();
+            m_MessageHeader = new RabbitMessageHeader();
             m_Packer = new NetMessageWriter(littleEndian);
         }
 
         public void WriteHeader()
         {
             m_Packer.Clear();
-            m_Packer.WriteData(m_Header.Extension);
-            m_Packer.WriteData(m_Header.ProtoId);
-            m_Packer.WriteData(m_Header.ClientId);
+            m_Packer.WriteData(m_MessageHeader.Extension);
+            m_Packer.WriteData(m_MessageHeader.ProtoId);
+            m_Packer.WriteData(m_MessageHeader.ClientId);
         }
 
         public void WriteHeader(string extension, string protoId, string cid)
         {
-            m_Header.SetHeaderInfo(extension, protoId, cid);
+            m_MessageHeader.SetHeaderInfo(extension, protoId, cid);
             WriteHeader();
         }
 
