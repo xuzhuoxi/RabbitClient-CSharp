@@ -11,9 +11,14 @@
 
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// Variable key constants for room entities.
+    /// 房间实体的变量键常量。
+    /// </summary>
     public static class RoomVarKeys
     {   
         /// <summary>
+        /// Room display name (string).
         /// 房间名称(string)
         /// </summary>
         public const string Name = "rn";

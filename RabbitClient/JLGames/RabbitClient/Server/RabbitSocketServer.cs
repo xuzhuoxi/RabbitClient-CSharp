@@ -7,6 +7,10 @@ using JLGames.RabbitClient.Home;
 
 namespace JLGames.RabbitClient.Server
 {
+    /// <summary>
+    /// Low-level Rabbit socket server connection wrapper with event dispatch.
+    /// 底层 Rabbit Socket 服务器连接封装，带事件分发。
+    /// </summary>
     public class RabbitSocketServer : EventDispatcher
     {
         private QueryRouteBackInfo m_ServerInfo;
@@ -16,26 +20,37 @@ namespace JLGames.RabbitClient.Server
         private bool m_Connecting;
         private bool m_Connected;
 
+        /// <summary>
+        /// Underlying socket client used for I/O.
+        /// 用于 I/O 的底层 Socket 客户端。
+        /// </summary>
         public ISocketClient SocketServer => m_SocketServer;
 
         /// <summary>
-        /// 正在连接 或 正在断开连接
+        /// Whether a connect or disconnect operation is in progress.
+        /// 是否正在进行连接或断开操作。
         /// </summary>
         public bool Connecting => m_Connecting;
 
         /// <summary>
-        /// 连接中
+        /// Whether the socket is currently connected.
+        /// Socket 当前是否已连接。
         /// </summary>
         public bool Connected => m_Connected;
 
+        /// <summary>
+        /// Creates a new socket server instance.
+        /// 创建 Socket 服务器实例。
+        /// </summary>
         public RabbitSocketServer()
         {
         }
 
         /// <summary>
-        /// 设置线程上下文
+        /// Sets the synchronization context for socket callbacks.
+        /// 设置 Socket 回调的同步上下文。
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="context">Synchronization context<br/>同步上下文</param>
         public void SetThreadSocketContext(SynchronizationContext context)
         {
             m_ThreadSocketContext = context;
@@ -46,9 +61,10 @@ namespace JLGames.RabbitClient.Server
         }
 
         /// <summary>
-        /// 连接到服务器
+        /// Connects to the game server using route information.
+        /// 使用路由信息连接到游戏服务器。
         /// </summary>
-        /// <param name="serverInfo"></param>
+        /// <param name="serverInfo">Server route and address info<br/>服务器路由与地址信息</param>
         public void ConnectServer(QueryRouteBackInfo serverInfo)
         {
             if (m_Connecting || m_Connected) return;
@@ -58,6 +74,10 @@ namespace JLGames.RabbitClient.Server
             StartConnect();
         }
 
+        /// <summary>
+        /// Disconnects from the server and releases socket resources.
+        /// 断开与服务器的连接并释放 Socket 资源。
+        /// </summary>
         public override void Dispose()
         {
             DisconnectServer();
@@ -65,7 +85,8 @@ namespace JLGames.RabbitClient.Server
         }
 
         /// <summary>
-        /// 断开与服务器的连接
+        /// Disconnects from the server if currently connected.
+        /// 若已连接则断开与服务器的连接。
         /// </summary>
         public void DisconnectServer()
         {

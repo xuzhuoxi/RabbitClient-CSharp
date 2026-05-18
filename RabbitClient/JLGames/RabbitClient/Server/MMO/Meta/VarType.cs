@@ -1,5 +1,9 @@
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// Persistence semantics for MMO variables.
+    /// MMO 变量的持久化语义。
+    /// </summary>
     public enum VarType : byte
     {
         /// <summary>

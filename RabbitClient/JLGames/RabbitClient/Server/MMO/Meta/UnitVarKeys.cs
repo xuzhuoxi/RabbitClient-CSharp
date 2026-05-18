@@ -11,37 +11,49 @@
 
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// Variable key constants for unit entities.
+    /// 单位实体的变量键常量。
+    /// </summary>
     public static class UnitVarKeys
     {   
         /// <summary>
+        /// Owner player or entity id.
         /// 拥有者
         /// </summary>
         public const string Owner = "ow";
         /// <summary>
+        /// Room id the unit belongs to.
         /// 所有房间Id
         /// </summary>
         public const string Room = "rm";
         /// <summary>
+        /// Position as int32 array [x, y, z].
         /// int32数组;坐标X、坐标Y、坐标Z
         /// </summary>
         public const string Pos = "pos";
         /// <summary>
+        /// Facing angle as int16.
         /// 朝向，int16
         /// </summary>
         public const string Toward = "tw";
         /// <summary>
+        /// Move input as int32 array [x, y, z].
         /// int32数组;输入X、输入Y、输入Z
         /// </summary>
         public const string InputMove = "im";
         /// <summary>
+        /// Target position as int32 array [x, y, z].
         /// int32数组;目标X、目标Y、目标Z
         /// </summary>
         public const string InputTarget = "it";
         /// <summary>
+        /// Jump input state (bool).
         /// 输入状态, Jump(bool)
         /// </summary>
         public const string InputJump = "ij";
         /// <summary>
+        /// Action state as uint32.
         /// 动作状态(uint32)
         /// </summary>
         public const string ActionState = "as";

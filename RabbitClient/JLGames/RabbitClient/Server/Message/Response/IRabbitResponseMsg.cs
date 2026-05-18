@@ -2,6 +2,10 @@
 
 namespace JLGames.RabbitClient.Server.Message
 {
+    /// <summary>
+    /// Rabbit server response message reader.
+    /// Rabbit服务端响应消息读取接口。
+    /// </summary>
     public interface IRabbitResponseMsg : IRabbitMessageReader, ICloneable<IRabbitResponseMsg>
     {
         /// <summary>

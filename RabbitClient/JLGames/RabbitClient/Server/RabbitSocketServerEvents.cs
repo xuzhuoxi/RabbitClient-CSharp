@@ -1,5 +1,9 @@
 namespace JLGames.RabbitClient.Server
 {
+    /// <summary>
+    /// Event names dispatched by RabbitSocketServer.
+    /// RabbitSocketServer 分发的事件名。
+    /// </summary>
     public static class RabbitSocketServerEvents
     {
         /// <summary>

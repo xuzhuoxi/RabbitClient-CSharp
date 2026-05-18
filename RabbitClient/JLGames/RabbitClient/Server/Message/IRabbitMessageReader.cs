@@ -3,6 +3,10 @@ using JLGames.Infra.Net;
 
 namespace JLGames.RabbitClient.Server.Message
 {
+    /// <summary>
+    /// Rabbit message reader with header and buffer operations.
+    /// Rabbit消息读取接口，包含消息头与缓冲区操作。
+    /// </summary>
     public interface IRabbitMessageReader : IRabbitMessageHeader, IDataBufferReader, IDataBufferCopier, IByteBufferReader, IByteBufferCopier
     {
         /// <summary>
@@ -18,15 +22,17 @@ namespace JLGames.RabbitClient.Server.Message
         void StartReadData();
 
         /// <summary>
-        /// 读取实现了INetMessage接口的对象数据
+        /// Reads an INetMessage object from the buffer and decodes it into the target.
+        /// 读取实现了INetMessage接口的对象数据并解码到目标对象。
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="message">Target message to decode into<br/>解码目标消息对象</param>
         void ReadMessageTo(INetMessage message);
 
         /// <summary>
-        /// 读取实现了INetMessage接口的对象数据, 不移动读下标
+        /// Copies an INetMessage payload from the buffer without advancing the read position.
+        /// 读取实现了INetMessage接口的对象数据，不移动读下标。
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="message">Target message to decode into<br/>解码目标消息对象</param>
         void CopyMessageTo(INetMessage message);
 
         /// <summary>
@@ -37,7 +43,7 @@ namespace JLGames.RabbitClient.Server.Message
         /// Supports basic data types and their arrays
         /// 支持基础数据类型及其数组
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="data">Object reference to receive the read value<br/>用于接收读取值的对象引用</param>
         void ReadDataTo(ref object data);
 
         /// <summary>
@@ -50,21 +56,21 @@ namespace JLGames.RabbitClient.Server.Message
         /// Note: not move reader index
         /// 注意：不移动读下标
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="data">Object reference to receive the copied value<br/>用于接收复制值的对象引用</param>
         void CopyDataTo(ref object data);
 
         /// <summary>
         /// Copy remain bytes.
         /// 复制剩余字节
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Remaining unread bytes<br/>剩余未读字节</returns>
         byte[] CopyRemains();
 
         /// <summary>
         /// Update the current object's data with byte data
         /// 使用字节数据更新当前对象的数据
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">Raw message bytes<br/>原始消息字节</param>
         void SetMessageBytes(byte[] msg);
     }
 }

@@ -1,5 +1,9 @@
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// Constants for world-level MMO lifecycle events.
+    /// 世界级 MMO 生命周期相关事件常量。
+    /// </summary>
     public static class WorldEvents
     {
         /// <summary>

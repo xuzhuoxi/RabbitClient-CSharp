@@ -11,49 +11,64 @@
 
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// Variable key constants for player entities.
+    /// 玩家实体的变量键常量。
+    /// </summary>
     public static class PlayerVarKeys
     {   
         /// <summary>
+        /// Position as int32 array [x, y, z].
         /// int32数组;坐标X、坐标Y、坐标Z
         /// </summary>
         public const string Pos = "pos";
         /// <summary>
+        /// Facing angle as int16.
         /// 朝向，int16
         /// </summary>
         public const string Toward = "tw";
         /// <summary>
+        /// Move input as int32 array [x, y, z].
         /// int32数组;输入X、输入Y、输入Z
         /// </summary>
         public const string InputMove = "im";
         /// <summary>
+        /// Target position as int32 array [x, y, z].
         /// int32数组;目标X、目标Y、目标Z
         /// </summary>
         public const string InputTarget = "it";
         /// <summary>
+        /// Jump input state (bool).
         /// 输入状态Jump(bool)
         /// </summary>
         public const string InputJump = "ij";
         /// <summary>
+        /// Action state as uint32.
         /// 动作状态(uint32)
         /// </summary>
         public const string ActionState = "as";
         /// <summary>
+        /// Hit points as uint32.
         /// 耐久(uint32)
         /// </summary>
         public const string Hp = "hp";
         /// <summary>
+        /// Buff flags as uint32 bit field.
         /// Buff(uint32), 每一个位代表一个buff
         /// </summary>
         public const string Buff = "pbf";
         /// <summary>
+        /// Player nickname (string).
         /// 昵称(string)
         /// </summary>
         public const string Nick = "pn";
         /// <summary>
+        /// Team id (string).
         /// 队伍id(string)
         /// </summary>
         public const string Team = "pt";
         /// <summary>
+        /// Team corps id (string).
         /// 军团Id(string)
         /// </summary>
         public const string TeamCorps = "pc";

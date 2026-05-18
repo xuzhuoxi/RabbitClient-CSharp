@@ -9,6 +9,10 @@ namespace JLGames.RabbitClient.Server.MMO
         private static uint s_MagnitudeLevel = 4;
         private static int s_MagnitudeValue = 10000;
 
+        /// <summary>
+        /// Exponent (decimal digits) for fixed magnitude scaling; updating recomputes <see cref="MagnitudeValue"/>.
+        /// 固定幅值缩放的指数（十进制位数）；更新后会重新计算 <see cref="MagnitudeValue"/>。
+        /// </summary>
         public static uint MagnitudeLevel
         {
             get => s_MagnitudeLevel;
@@ -20,6 +24,10 @@ namespace JLGames.RabbitClient.Server.MMO
             }
         }
 
+        /// <summary>
+        /// Cached power-of-ten magnitude (10^<see cref="MagnitudeLevel"/>) used by axis constants.
+        /// 缓存的十的幂幅值（10^<see cref="MagnitudeLevel"/>），供轴向常量使用。
+        /// </summary>
         public static int MagnitudeValue => s_MagnitudeValue;
 
         private static readonly V3Int s_Zero = new V3Int(0, 0, 0);
@@ -31,62 +39,116 @@ namespace JLGames.RabbitClient.Server.MMO
         private static readonly V3Int s_Forward = new V3Int(0, 0, s_MagnitudeValue);
         private static readonly V3Int s_Back = new V3Int(0, 0, -s_MagnitudeValue);
 
+        /// <summary>
+        /// Vector with all components set to zero.
+        /// 各分量均为零的向量。
+        /// </summary>
         public static V3Int zero
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Zero;
         }
 
+        /// <summary>
+        /// Vector with all components set to <see cref="MagnitudeValue"/>.
+        /// 各分量均为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int one
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_One;
         }
 
+        /// <summary>
+        /// Unit-scale vector along positive Z (forward) using <see cref="MagnitudeValue"/>.
+        /// 沿 Z 轴正方向（前向）、长度为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int forward
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Forward;
         }
 
+        /// <summary>
+        /// Unit-scale vector along negative Z (back) using <see cref="MagnitudeValue"/>.
+        /// 沿 Z 轴负方向（后向）、长度为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int back
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Back;
         }
 
+        /// <summary>
+        /// Unit-scale vector pointing toward positive Y using <see cref="MagnitudeValue"/>.
+        /// 沿 Y 轴正方向、长度为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int up
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Up;
         }
 
+        /// <summary>
+        /// Unit-scale vector pointing toward negative Y using <see cref="MagnitudeValue"/>.
+        /// 沿 Y 轴负方向、长度为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int down
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Down;
         }
 
+        /// <summary>
+        /// Unit-scale vector pointing toward negative X using <see cref="MagnitudeValue"/>.
+        /// 沿 X 轴负方向、长度为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int left
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Left;
         }
 
+        /// <summary>
+        /// Unit-scale vector pointing toward positive X using <see cref="MagnitudeValue"/>.
+        /// 沿 X 轴正方向、长度为 <see cref="MagnitudeValue"/> 的向量。
+        /// </summary>
         public static V3Int right
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => V3Int.s_Right;
         }
 
+        /// <summary>
+        /// Component-wise minimum of two vectors.
+        /// 两个向量各分量逐一取最小值。
+        /// </summary>
+        /// <param name="lhs">First operand.<br/>左操作数。</param>
+        /// <param name="rhs">Second operand.<br/>右操作数。</param>
+        /// <returns>Vector of per-component minimums.<br/>各分量最小值构成的新向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int Min(V3Int lhs, V3Int rhs) =>
             new V3Int(Math.Min(lhs.x, rhs.x), Math.Min(lhs.y, rhs.y), Math.Min(lhs.z, rhs.z));
 
+        /// <summary>
+        /// Component-wise maximum of two vectors.
+        /// 两个向量各分量逐一取最大值。
+        /// </summary>
+        /// <param name="lhs">First operand.<br/>左操作数。</param>
+        /// <param name="rhs">Second operand.<br/>右操作数。</param>
+        /// <returns>Vector of per-component maximums.<br/>各分量最大值构成的新向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int Max(V3Int lhs, V3Int rhs) =>
             new V3Int(Math.Max(lhs.x, rhs.x), Math.Max(lhs.y, rhs.y), Math.Max(lhs.z, rhs.z));
 
+        /// <summary>
+        /// Linear interpolation between <paramref name="a"/> and <paramref name="b"/> with clamped <paramref name="t"/>.
+        /// 在 <paramref name="a"/> 与 <paramref name="b"/> 之间线性插值，并将 <paramref name="t"/> 限制在合法范围。
+        /// </summary>
+        /// <param name="a">Start vector.<br/>起点向量。</param>
+        /// <param name="b">End vector.<br/>终点向量。</param>
+        /// <param name="t">Interpolation factor (clamped to [0,1]).<br/>插值系数（会被限制在 [0,1]）。</param>
+        /// <returns>Interpolated vector with integer truncation per component.<br/>逐分量截断为整数后的插值结果。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int Lerp(V3Int a, V3Int b, float t)
         {
@@ -94,34 +156,97 @@ namespace JLGames.RabbitClient.Server.MMO
             return new V3Int((int)(a.x + (b.x - a.x) * t), (int)(a.y + (b.y - a.y) * t), (int)(a.z + (b.z - a.z) * t));
         }
 
+        /// <summary>
+        /// Linear interpolation without clamping <paramref name="t"/>.
+        /// 对 <paramref name="t"/> 不做限制的线性插值。
+        /// </summary>
+        /// <param name="a">Start vector.<br/>起点向量。</param>
+        /// <param name="b">End vector.<br/>终点向量。</param>
+        /// <param name="t">Interpolation factor.<br/>插值系数。</param>
+        /// <returns>Interpolated vector with integer truncation per component.<br/>逐分量截断为整数后的插值结果。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int LerpUnclamped(V3Int a, V3Int b, float t) =>
             new V3Int((int)(a.x + (b.x - a.x) * t), (int)(a.y + (b.y - a.y) * t), (int)(a.z + (b.z - a.z) * t));
 
+        /// <summary>
+        /// Adds two vectors component-wise.
+        /// 两个向量逐分量相加。
+        /// </summary>
+        /// <param name="a">Left operand.<br/>左操作数。</param>
+        /// <param name="b">Right operand.<br/>右操作数。</param>
+        /// <returns>Sum vector.<br/>和向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int operator +(V3Int a, V3Int b) => new V3Int(a.x + b.x, a.y + b.y, a.z + b.z);
 
+        /// <summary>
+        /// Subtracts <paramref name="b"/> from <paramref name="a"/> component-wise.
+        /// 将 <paramref name="b"/> 从 <paramref name="a"/> 逐分量相减。
+        /// </summary>
+        /// <param name="a">Minuend.<br/>被减数。</param>
+        /// <param name="b">Subtrahend.<br/>减数。</param>
+        /// <returns>Difference vector.<br/>差向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int operator -(V3Int a, V3Int b) => new V3Int(a.x - b.x, a.y - b.y, a.z - b.z);
 
+        /// <summary>
+        /// Negates all components of <paramref name="a"/>.
+        /// 将 <paramref name="a"/> 的各分量取负。
+        /// </summary>
+        /// <param name="a">Operand.<br/>操作数。</param>
+        /// <returns>Negated vector.<br/>取负后的向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int operator -(V3Int a) => new V3Int(-a.x, -a.y, -a.z);
 
+        /// <summary>
+        /// Multiplies each component of <paramref name="a"/> by scalar <paramref name="b"/>.
+        /// 将 <paramref name="a"/> 的每个分量乘以标量 <paramref name="b"/>。
+        /// </summary>
+        /// <param name="a">Vector operand.<br/>向量操作数。</param>
+        /// <param name="b">Scalar multiplier.<br/>标量乘数。</param>
+        /// <returns>Scaled vector.<br/>缩放后的向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int operator *(V3Int a, int b) => new V3Int(a.x * b, a.y * b, a.z * b);
 
+        /// <summary>
+        /// Multiplies each component of <paramref name="a"/> by scalar <paramref name="b"/> (scalar-left form).
+        /// 标量在左的形式：将 <paramref name="a"/> 的每个分量乘以标量 <paramref name="b"/>。
+        /// </summary>
+        /// <param name="b">Scalar multiplier.<br/>标量乘数。</param>
+        /// <param name="a">Vector operand.<br/>向量操作数。</param>
+        /// <returns>Scaled vector.<br/>缩放后的向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int operator *(int b, V3Int a) => new V3Int(a.x * b, a.y * b, a.z * b);
 
+        /// <summary>
+        /// Divides each component of <paramref name="a"/> by scalar <paramref name="b"/>.
+        /// 将 <paramref name="a"/> 的每个分量除以标量 <paramref name="b"/>。
+        /// </summary>
+        /// <param name="a">Vector dividend.<br/>被除向量。</param>
+        /// <param name="b">Scalar divisor.<br/>标量除数。</param>
+        /// <returns>Quotient vector.<br/>商向量。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static V3Int operator /(V3Int a, int b) => new V3Int(a.x / b, a.y / b, a.z / b);
 
+        /// <summary>
+        /// Equality comparison for two vectors.
+        /// 比较两个向量是否相等。
+        /// </summary>
+        /// <param name="lhs">Left operand.<br/>左操作数。</param>
+        /// <param name="rhs">Right operand.<br/>右操作数。</param>
+        /// <returns>True if all components match.<br/>若各分量均相等则为 true。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(V3Int lhs, V3Int rhs)
         {
             return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
         }
 
+        /// <summary>
+        /// Inequality comparison for two vectors.
+        /// 比较两个向量是否不相等。
+        /// </summary>
+        /// <param name="lhs">Left operand.<br/>左操作数。</param>
+        /// <param name="rhs">Right operand.<br/>右操作数。</param>
+        /// <returns>True if any component differs.<br/>若任一分量不同则为 true。</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(V3Int lhs, V3Int rhs) => !(lhs == rhs);
     }

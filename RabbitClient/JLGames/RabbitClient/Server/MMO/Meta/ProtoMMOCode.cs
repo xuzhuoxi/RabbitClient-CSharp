@@ -11,81 +11,104 @@
 
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// MMO protocol error and result codes.
+    /// MMO 协议错误与结果码。
+    /// </summary>
     public static class ProtoMMOCode
     {   
         /// <summary>
+        /// Room does not exist.
         /// 房间不存在
         /// </summary>
         public const int MMORoomExist = -101;
         /// <summary>
+        /// Room already exists.
         /// 房间已存在
         /// </summary>
         public const int MMORoomNotExist = -102;
         /// <summary>
+        /// Room capacity limit reached.
         /// 房间容量上限
         /// </summary>
         public const int MMORoomCapLimit = -103;
         /// <summary>
+        /// Team corps does not exist.
         /// 团队不存在
         /// </summary>
         public const int MMOTeamCorpsExist = -104;
         /// <summary>
+        /// Team corps already exists.
         /// 团队已存在
         /// </summary>
         public const int MMOTeamCorpsNotExist = -105;
         /// <summary>
+        /// Team corps capacity limit reached.
         /// 团队容量上限
         /// </summary>
         public const int MMOTeamCorpsCapLimit = -106;
         /// <summary>
+        /// Team does not exist.
         /// 队伍不存在
         /// </summary>
         public const int MMOTeamExist = -107;
         /// <summary>
+        /// Team already exists.
         /// 队伍已存在
         /// </summary>
         public const int MMOTeamNotExist = -108;
         /// <summary>
+        /// Team capacity limit reached.
         /// 队伍容量上限
         /// </summary>
         public const int MMOTeamCapLimit = -109;
         /// <summary>
+        /// Channel does not exist.
         /// 频道不存在
         /// </summary>
         public const int MMOChanExist = -110;
         /// <summary>
+        /// Channel already exists.
         /// 频道已存在
         /// </summary>
         public const int MMOChanNotExist = -111;
         /// <summary>
+        /// Channel capacity limit reached.
         /// 频道容量上限
         /// </summary>
         public const int MMOChanCapLimit = -112;
         /// <summary>
+        /// Player already exists.
         /// 用户已存在
         /// </summary>
         public const int MMOPlayerExist = -113;
         /// <summary>
+        /// Player does not exist.
         /// 用户不存在
         /// </summary>
         public const int MMOPlayerNotExist = -114;
         /// <summary>
+        /// Player is already in the room.
         /// 用户已经在房间中
         /// </summary>
         public const int MMOPlayerInRoom = -115;
         /// <summary>
+        /// Unit already exists.
         /// 单位已存在
         /// </summary>
         public const int MMOUnitExist = -116;
         /// <summary>
+        /// Unit does not exist.
         /// 单位不存在
         /// </summary>
         public const int MMOUnitNotExist = -117;
         /// <summary>
+        /// Index type mismatch.
         /// 索引类型不匹配
         /// </summary>
         public const int MMOIndexType = -200;
         /// <summary>
+        /// Other error.
         /// 其它错误
         /// </summary>
         public const int MMOOther = -201;

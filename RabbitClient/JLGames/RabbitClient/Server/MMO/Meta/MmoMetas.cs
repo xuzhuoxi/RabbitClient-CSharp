@@ -2,8 +2,16 @@ using System.Collections.Generic;
 
 namespace JLGames.RabbitClient.Server.MMO
 {
+    /// <summary>
+    /// Registry of default MMO variable metadata by entity kind.
+    /// 按实体类型注册的 MMO 变量默认元数据。
+    /// </summary>
     public static class MmoMetas
     {
+        /// <summary>
+        /// Metadata for a single variable key.
+        /// 单个变量键的元数据。
+        /// </summary>
         public class MetaData
         {
             /// <summary>
@@ -57,33 +65,66 @@ namespace JLGames.RabbitClient.Server.MMO
             { UnitVarKeys.InputJump, new MetaData { Key = UnitVarKeys.InputJump, Type = VarType.Moment, Default = default(bool) } },
         };
 
+        /// <summary>
+        /// Gets room variable metadata by key.
+        /// 按键获取房间变量元数据。
+        /// </summary>
+        /// <param name="key">Variable key<br/>变量键</param>
+        /// <returns>Metadata or null<br/>元数据或 null</returns>
         public static MetaData GetRoomVarMeta(string key)
         {
             return !s_RoomMetas.ContainsKey(key) ? null : s_RoomMetas[key];
         }
 
+        /// <summary>
+        /// Gets player variable metadata by key.
+        /// 按键获取玩家变量元数据。
+        /// </summary>
+        /// <param name="key">Variable key<br/>变量键</param>
+        /// <returns>Metadata or null<br/>元数据或 null</returns>
         public static MetaData GetPlayerVarMeta(string key)
         {
             return !s_PlayerMetas.ContainsKey(key) ? null : s_PlayerMetas[key];
         }
 
+        /// <summary>
+        /// Gets unit variable metadata by key.
+        /// 按键获取单位变量元数据。
+        /// </summary>
+        /// <param name="key">Variable key<br/>变量键</param>
+        /// <returns>Metadata or null<br/>元数据或 null</returns>
         public static MetaData GetUnitVarMeta(string key)
         {
             return !s_UnitMetas.ContainsKey(key) ? null : s_UnitMetas[key];
         }
 
+        /// <summary>
+        /// Registers or replaces room variable metadata.
+        /// 注册或替换房间变量元数据。
+        /// </summary>
+        /// <param name="metaData">Metadata entry<br/>元数据项</param>
         public static void RegisterRoomVarMeta(MetaData metaData)
         {
             if (null == metaData) return;
             s_RoomMetas[metaData.Key] = metaData;
         }
 
+        /// <summary>
+        /// Registers or replaces player variable metadata.
+        /// 注册或替换玩家变量元数据。
+        /// </summary>
+        /// <param name="metaData">Metadata entry<br/>元数据项</param>
         public static void RegisterPlayerVarMeta(MetaData metaData)
         {
             if (null == metaData) return;
             s_PlayerMetas[metaData.Key] = metaData;
         }
 
+        /// <summary>
+        /// Registers or replaces unit variable metadata.
+        /// 注册或替换单位变量元数据。
+        /// </summary>
+        /// <param name="metaData">Metadata entry<br/>元数据项</param>
         public static void RegisterUnitVarMeta(MetaData metaData)
         {
             if (null == metaData) return;

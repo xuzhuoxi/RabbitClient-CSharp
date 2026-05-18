@@ -1,5 +1,9 @@
 ﻿namespace JLGames.RabbitClient.Server.Message
 {
+    /// <summary>
+    /// Common Rabbit message header properties.
+    /// Rabbit消息头通用属性。
+    /// </summary>
     public interface IRabbitMessageHeader
     {
         /// <summary>
