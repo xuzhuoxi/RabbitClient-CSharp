@@ -9,6 +9,7 @@ using JLGames.RabbitClient.Home;
 namespace JLGames.RabbitClientTest.Rabbit;
 
 [TestFixture]
+[Category("RunOnlyThis")] // 依赖本机 Rabbit-Home / Rabbit-Server 服务，CI 中跳过
 public class ManagerTest
 {
     private static readonly string s_BasePath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)?.Parent!.Parent!.Parent!.FullName;

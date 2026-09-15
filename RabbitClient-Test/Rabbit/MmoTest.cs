@@ -26,6 +26,7 @@ public struct MmoPlayerLeave
 }
 
 [TestFixture]
+[Category("RunOnlyThis")] // 依赖本机 Rabbit-Home / Rabbit-Server 服务，CI 中跳过
 public class MmoTest
 {
     // 转接信息
@@ -63,7 +64,7 @@ public class MmoTest
     private void OnLinkFinish(EventData evd)
     {
         TestContext.Progress.WriteLine($"OnLinkFinish: Suc={evd.Data}");
-        m_RabbitClientManager.SocketClient.EventDispatcher.AddEventListener(RabbitSocketClientEvents.EventOnClientMessage, OnSocketClientMessage);
+        m_RabbitClientManager.SocketClient.EventDispatcher.AddEventListener(RabbitSocketClientEvents.EventOnClientReceiveMessage, OnSocketClientMessage);
         foreach (var playerId in s_PlayerIds)
         {
             new Thread(async () => { await Run(playerId); }).Start();

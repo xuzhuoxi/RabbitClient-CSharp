@@ -1,0 +1,166 @@
+# 发版流程、注意事项见同目录 Release.md
+name: Release
+
+# 仅在推送 tag 时触发。GitHub 无法把 branches 与 tags 组合成「只在 master 上打 tag」
+#（二者为或关系，且分别匹配 refs/heads/* 与 refs/tags/*），因此用 tags 触发，再在 job 内校验提交是否在 master。
+on:
+  push:
+    tags:
+      - 'v*.*.*' # 例如 v1.0.3、v1.0.3-rc.1；1.0.3 / v1.0 不会触发
+
+# 创建 Release、上传附件。GITHUB_TOKEN 由 GitHub 自动注入，无需在 Secrets 中配置。
+# 发布者会显示为 github-actions[bot]，无法改成推 tag 的用户。
+permissions:
+  contents: write
+
+env:
+  APP_NAME: RabbitClient-CSharp
+  DLL_NAME: RabbitClient
+  # PACKAGE_ID: JLGames.RabbitClient  # NuGet 打包暂不启用
+  TARGET_TFM: netstandard2.0
+  INFRA_REPO: xuzhuoxi/Infra-CSharp
+  INFRA_DEFAULT_REF: master
+
+jobs:
+  release:
+    name: Build and release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: RabbitClient-CSharp
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # 需要完整历史，才能判断 tag 提交是否为 master 的祖先
+          path: RabbitClient-CSharp
+
+      # github.ref 在 tag 推送时是 refs/tags/...，不能用 if: github.ref == refs/heads/master
+      - name: Ensure tag is on master
+        run: |
+          git fetch origin master
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+            echo "::error::Tag ${GITHUB_REF_NAME} is not on the master branch."
+            exit 1
+          fi
+
+      - name: Resolve Infra-CSharp ref
+        id: infra_ref
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if git ls-remote --exit-code --tags "https://github.com/${INFRA_REPO}.git" "refs/tags/${tag}" >/dev/null; then
+            echo "ref=${tag}" >> "$GITHUB_OUTPUT"
+            echo "Using Infra-CSharp tag ${tag}"
+          else
+            echo "ref=${INFRA_DEFAULT_REF}" >> "$GITHUB_OUTPUT"
+            echo "Infra-CSharp has no tag ${tag}; using ${INFRA_DEFAULT_REF}"
+          fi
+        working-directory: ${{ github.workspace }}
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          path: Infra-CSharp
+          ref: ${{ steps.infra_ref.outputs.ref }}
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build release packages
+        # GITHUB_REF_NAME 为 tag 短名，如 v1.0.3。本仓库是类库，产物为 Debug / Release 两份 netstandard DLL 包。
+        run: |
+          set -euo pipefail
+
+          version="${GITHUB_REF_NAME}"
+          out_dir="${GITHUB_WORKSPACE}/dist"
+          mkdir -p "${out_dir}"
+
+          pack_zip() {
+            local configuration="$1"
+            local label="$2"
+            local dll_dir="RabbitClient/bin/${configuration}/${TARGET_TFM}"
+            local work_dir
+            work_dir="$(mktemp -d)"
+            cp "${dll_dir}/${DLL_NAME}.dll" "${dll_dir}/${DLL_NAME}.pdb" "${dll_dir}/${DLL_NAME}.deps.json" "${work_dir}/"
+            # ProjectReference + CopyLocalLockFileAssemblies：输出目录会带上 Infra-CSharp.dll
+            if [[ -f "${dll_dir}/Infra-CSharp.dll" ]]; then
+              cp "${dll_dir}/Infra-CSharp.dll" "${work_dir}/"
+            fi
+            if [[ -f "${dll_dir}/Infra-CSharp.pdb" ]]; then
+              cp "${dll_dir}/Infra-CSharp.pdb" "${work_dir}/"
+            fi
+            cp LICENSE README.md README_EN.md "${work_dir}/"
+            local archive_base="${APP_NAME}_${version}_${label}_${TARGET_TFM}"
+            (cd "${work_dir}" && zip -q "${out_dir}/${archive_base}.zip" ./*)
+          }
+
+          dotnet build RabbitClient/RabbitClient.csproj --configuration Debug
+          pack_zip Debug debug
+
+          dotnet build RabbitClient/RabbitClient.csproj --configuration Release
+          pack_zip Release release
+
+          # NuGet 打包暂不启用（也不推 nuget.org / GitHub Packages）
+          # pkg_version="${version#v}"
+          # dotnet pack RabbitClient/RabbitClient.csproj \
+          #   --configuration Release \
+          #   --output "${out_dir}" \
+          #   -p:PackageId="${PACKAGE_ID}" \
+          #   -p:PackageVersion="${pkg_version}" \
+          #   -p:Version="${pkg_version}" \
+          #   -p:IncludeSymbols=true \
+          #   -p:SymbolPackageFormat=snupkg
+
+          (cd "${out_dir}" && sha256sum * > SHA256SUMS.txt)
+          ls -lh "${out_dir}"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # 手写说明 notes/release/ReleaseNotes_<tag>.md 须与 tag 同名且已在被 tag 的提交中；
+        # 有则置于正文最前（同 v1.0.0），再追加自动 notes。
+        # 手写文件已含 **Full Changelog** 时，去掉自动 notes 中的同名行，避免重复。
+        # tag 含 "-" 视为预发布（如 v1.0.3-rc.1）。
+        # 已存在则覆盖附件并更新正文。
+        run: |
+          set -euo pipefail
+
+          notes_file="notes/release/ReleaseNotes_${GITHUB_REF_NAME}.md"
+          combined_notes="$(mktemp)"
+          auto_notes="$(mktemp)"
+
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${GITHUB_REF_NAME}" \
+            -f target_commitish="${GITHUB_SHA}" \
+            --jq .body > "${auto_notes}"
+
+          if [[ -f "${notes_file}" ]]; then
+            cat "${notes_file}" > "${combined_notes}"
+            printf '\n\n' >> "${combined_notes}"
+            if grep -qF '**Full Changelog**' "${notes_file}"; then
+              sed '/^\*\*Full Changelog\*\*/d' "${auto_notes}" >> "${combined_notes}"
+            else
+              cat "${auto_notes}" >> "${combined_notes}"
+            fi
+          else
+            cat "${auto_notes}" > "${combined_notes}"
+          fi
+
+          prerelease_args=()
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            prerelease_args=(--prerelease)
+          fi
+
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "${GITHUB_WORKSPACE}/dist"/* --clobber
+            gh release edit "${GITHUB_REF_NAME}" \
+              --title "${GITHUB_REF_NAME}" \
+              --notes-file "${combined_notes}" \
+              "${prerelease_args[@]}"
+          else
+            gh release create "${GITHUB_REF_NAME}" "${GITHUB_WORKSPACE}/dist"/* \
+              --title "${GITHUB_REF_NAME}" \
+              --notes-file "${combined_notes}" \
+              "${prerelease_args[@]}"
+          fi

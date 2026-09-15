@@ -1,5 +1,7 @@
 # Rabbit-Client 更新日志
 
+新版本发行说明见 [`notes/release/`](notes/release/)。下文为历史记录，不再追加。
+
 ## 版本 v1.0.0
 
 初始版本。

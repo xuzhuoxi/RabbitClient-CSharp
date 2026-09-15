@@ -1,0 +1,85 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: RabbitClient-CSharp
+    outputs:
+      has_coverage: ${{ steps.cov.outputs.has_coverage }}
+    steps:
+      # 本仓库 csproj 以旁路目录引用 Infra-CSharp（../../Infra-CSharp/...），
+      # 须把两个仓库检出为 github.workspace 下的兄弟目录。
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          path: RabbitClient-CSharp
+      - uses: actions/checkout@v7
+        with:
+          repository: xuzhuoxi/Infra-CSharp
+          path: Infra-CSharp
+          ref: master
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+      - name: Run build
+        run: dotnet build RabbitClient-CSharp.sln --configuration Release
+      - name: Run test with coverage
+        # Category=RunOnlyThis 的用例依赖本机 Rabbit-Home（HTTP 9000）及 Rabbit-Server，CI 中跳过。
+        run: |
+          set -euo pipefail
+          dotnet test RabbitClient-Test/RabbitClient-Test.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category!=RunOnlyThis" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory "${GITHUB_WORKSPACE}/coverage" \
+            --blame-hang-timeout 5m \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          cov="$(find "${GITHUB_WORKSPACE}/coverage" -name 'coverage.cobertura.xml' 2>/dev/null | head -n 1 || true)"
+          if [[ -n "${cov}" ]]; then
+            cp "${cov}" "${GITHUB_WORKSPACE}/coverage.cobertura.xml"
+          fi
+      - name: Record coverage presence
+        id: cov
+        run: |
+          if [[ -f "${GITHUB_WORKSPACE}/coverage.cobertura.xml" ]]; then
+            echo "has_coverage=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_coverage=false" >> "$GITHUB_OUTPUT"
+          fi
+        working-directory: ${{ github.workspace }}
+      - name: Upload coverage artifact
+        if: steps.cov.outputs.has_coverage == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage
+          path: coverage.cobertura.xml
+
+  upload-coverage:
+    name: Upload coverage
+    needs: build-and-test
+    if: needs.build-and-test.outputs.has_coverage == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.cobertura.xml
+          fail_ci_if_error: false

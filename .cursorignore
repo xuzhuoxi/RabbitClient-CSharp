@@ -1,8 +1,8 @@
-# 忽略C#项目编译与运行产物
-Rabbit-Client-CSharp/bin/
-Rabbit-Client-CSharp/obj/
-Rabbit-Client-Test/bin/
-Rabbit-Client-Test/obj/
+﻿# 忽略C#项目编译与运行产物
+RabbitClient/bin/
+RabbitClient/obj/
+RabbitClient-Test/bin/
+RabbitClient-Test/obj/
 .vs/
 .vscode/
 .idea/

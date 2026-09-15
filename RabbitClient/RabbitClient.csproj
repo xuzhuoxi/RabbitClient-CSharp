@@ -8,6 +8,16 @@
         <Nullable>disable</Nullable>
 		<ConsoleEncoding>UTF-8</ConsoleEncoding>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <GenerateDependencyFile>true</GenerateDependencyFile>
+        <!-- NuGet 打包暂不启用
+        <PackageId>JLGames.RabbitClient</PackageId>
+        <Authors>xuzhuoxi</Authors>
+        <Description>A C# client library for discovering Rabbit-Server via Rabbit-Home and exchanging socket messages.</Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        -->
     </PropertyGroup>
 
 <!--    <ItemGroup>-->
