@@ -3,13 +3,13 @@
 
 Usage:
   resolve-infra-ref.py REQUIRE.yml --default
-      CI: read Default.Infra-CSharp (last | v*.*.* | git short SHA).
+      CI: read Default.Infra-CSharp (branch | v*.*.* | git short SHA).
   resolve-infra-ref.py REQUIRE.yml TAG --strict
-      Release: find Require[] item whose Tag equals TAG.
+      Release: find Require[] item whose Tag equals TAG; Infra-CSharp uses the same value format.
 
 Writes ref= (and tag= for Release) to $GITHUB_OUTPUT.
 
-INFRA_REPO env (default xuzhuoxi/Infra-CSharp) is used when value is last.
+INFRA_REPO env (default xuzhuoxi/Infra-CSharp) is used when value is a branch name.
 """
 from __future__ import annotations
 
@@ -45,26 +45,54 @@ def write_output(**fields: str) -> None:
             fh.write(f"{key}={value}\n")
 
 
-def default_branch(repo: str) -> str | None:
+def is_branch_name(name: str) -> bool:
+    proc = subprocess.run(
+        ["git", "check-ref-format", "--allow-onelevel", name],
+        capture_output=True,
+    )
+    return proc.returncode == 0
+
+
+def remote_has_branch(repo: str, name: str) -> bool:
     remote = f"https://github.com/{repo}.git"
-    for name in ("master", "main"):
-        proc = subprocess.run(
-            [
-                "git",
-                "-c",
-                "http.https://github.com/.extraheader=",
-                "ls-remote",
-                "--exit-code",
-                "--heads",
-                remote,
-                f"refs/heads/{name}",
-            ],
-            capture_output=True,
-            text=True,
+    # 不要在本仓库 gitdir 下跑：checkout v7 的 includeIf 会带上 GITHUB_TOKEN。
+    cwd = os.environ.get("RUNNER_TEMP") or "/tmp"
+    proc = subprocess.run(
+        ["git", "ls-remote", "--exit-code", "--heads", remote, f"refs/heads/{name}"],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+    )
+    return proc.returncode == 0
+
+
+def resolve_infra_value(raw: str, *, source: str, extra: dict[str, str] | None = None) -> int:
+    raw = raw.strip()
+    extra = extra or {}
+    repo = (os.environ.get("INFRA_REPO") or DEFAULT_INFRA_REPO).strip()
+
+    if TAG_RE.match(raw):
+        write_output(ref=raw, kind="tag", **extra)
+        print(f"Using Infra-CSharp tag {raw} ({source})")
+        return 0
+
+    if SHA_RE.match(raw):
+        write_output(ref=raw, kind="sha", **extra)
+        print(f"Using Infra-CSharp commit {raw} ({source})")
+        return 0
+
+    if not is_branch_name(raw):
+        return fail(
+            f"{source}={raw} 无效，工作流已中止。"
+            "取值须为分支名、v*.*.* tag，或 git 提交短哈希。"
         )
-        if proc.returncode == 0:
-            return name
-    return None
+
+    if not remote_has_branch(repo, raw):
+        return fail(f"Infra-CSharp 仓库 {repo} 没有分支 {raw}，工作流已中止。")
+
+    write_output(ref=raw, kind="branch", **extra)
+    print(f"Using Infra-CSharp branch {raw} (latest, {source})")
+    return 0
 
 
 def resolve_default(data: dict) -> int:
@@ -74,30 +102,7 @@ def resolve_default(data: dict) -> int:
     raw = str(block.get("Infra-CSharp") or "").strip()
     if not raw:
         return fail("Require.yml 的 Default.Infra-CSharp 为空，工作流已中止。")
-
-    repo = (os.environ.get("INFRA_REPO") or DEFAULT_INFRA_REPO).strip()
-    if raw == "last":
-        branch = default_branch(repo)
-        if not branch:
-            return fail(f"Infra-CSharp 仓库 {repo} 没有 master 或 main 分支，工作流已中止。")
-        write_output(ref=branch, kind="last")
-        print(f"Using Infra-CSharp {branch} (Require.yml Default.Infra-CSharp=last)")
-        return 0
-
-    if TAG_RE.match(raw):
-        write_output(ref=raw, kind="tag")
-        print(f"Using Infra-CSharp tag {raw} (Require.yml Default.Infra-CSharp)")
-        return 0
-
-    if SHA_RE.match(raw):
-        write_output(ref=raw, kind="sha")
-        print(f"Using Infra-CSharp commit {raw} (Require.yml Default.Infra-CSharp)")
-        return 0
-
-    return fail(
-        f"Require.yml 的 Default.Infra-CSharp={raw} 无效，工作流已中止。"
-        "取值须为 last、v*.*.* tag，或 git 提交短哈希。"
-    )
+    return resolve_infra_value(raw, source="Require.yml Default.Infra-CSharp")
 
 
 def resolve_require_tag(data: dict, want: str, strict: bool) -> int:
@@ -121,9 +126,11 @@ def resolve_require_tag(data: dict, want: str, strict: bool) -> int:
     if not infra:
         return fail(f"Tag {selected} 缺少 Infra-CSharp 字段，工作流已中止。")
 
-    write_output(ref=infra, tag=selected, kind="tag")
-    print(f"Using Infra-CSharp {infra} (Require.yml Tag={selected})")
-    return 0
+    return resolve_infra_value(
+        infra,
+        source=f"Require.yml Tag={selected} Infra-CSharp",
+        extra={"tag": selected},
+    )
 
 
 def main() -> int:

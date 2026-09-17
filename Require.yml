@@ -1,8 +1,9 @@
-# Default.Infra-CSharp 供 CI 使用，取值三类：
-#   last     — Infra 仓库 master/main 的最新提交
+# Infra-CSharp 取值三类（Default 与 Require[n] 相同）：
+#   分支名   — Infra 该分支的最新提交，例如 master、main
 #   v*.*.*   — Infra tag，例如 v1.4.1
 #   短哈希   — Infra 某次 git 提交（7–40 位十六进制）
-# Require 数组供 Release 使用：本仓库 Tag → Infra-CSharp tag
+# Default 供 CI 使用；
+# Require 数组供 Release：本仓库 Tag → Infra-CSharp
 Default:
   Infra-CSharp: v1.4.1
 Require:

@@ -34,7 +34,7 @@ RabbitClient-CSharp 面向需要动态发现后端的客户端：先向 Rabbit-H
 
 ## 注意事项
 
-- **与 Infra-CSharp 对齐版本。** 本地源码构建时，本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 须位于同一父目录（`JLGameStudios/Infra-CSharp` 与 `JLGameStudios/RabbitClient-CSharp`）。**CI** 读取 `Require.yml` 的 `Default.Infra-CSharp`：`last` 表示 Infra `master`/`main` 最新提交，`v*.*.*` 表示 tag，否则为 git 提交短哈希。**Release** 在 `Require` 数组中查找 `Tag` 等于本仓库 tag 的项，再用该项的 `Infra-CSharp` 检出依赖；找不到对应项时工作流会中止。
+- **与 Infra-CSharp 对齐版本。** 本地源码构建时，本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 须位于同一父目录（`JLGameStudios/Infra-CSharp` 与 `JLGameStudios/RabbitClient-CSharp`）。**CI** 读取 `Require.yml` 的 `Default.Infra-CSharp`。**Release** 在 `Require` 数组中查找 `Tag` 等于本仓库 tag 的项，再用该项的 `Infra-CSharp`。两处字段格式相同：分支名表示该分支最新提交，`v*.*.*` 表示 tag，否则为 git 提交短哈希。找不到对应项时工作流会中止。
 - **与 Rabbit-Home / Rabbit-Server 互通时请使用匹配的服务端版本。** 路由查询、消息分帧和会话密钥随协议演进，混用版本可能导致无法握手或解析失败。
 - 依赖本机 Rabbit-Home（默认 HTTP `127.0.0.1:9000`）和 Rabbit-Server 的用例标了 `RunOnlyThis`，CI 中会跳过。
 - 公开 API 以源码为准。线程上下文类型为 `SynchronizationContext`。
@@ -198,10 +198,10 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj --filter "Category!=RunOn
 
 ```yaml
 Default:
-  Infra-CSharp: v1.4.1   # CI：last | v*.*.* | 提交短哈希
+  Infra-CSharp: v1.4.1   # 分支名 | v*.*.* | 提交短哈希
 Require:
   - Tag: v1.2.1
-    Infra-CSharp: v1.4.1
+    Infra-CSharp: v1.4.1   # 与 Default 格式相同
 ```
 
 ## 许可证

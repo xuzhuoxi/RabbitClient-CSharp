@@ -34,7 +34,7 @@ Releases are Debug / Release DLL zips on GitHub; NuGet packing is not enabled ye
 
 ## Notes
 
-- **Pin Infra-CSharp for releases.** For source builds, keep this repo next to [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) under the same parent (`JLGameStudios/Infra-CSharp` and `JLGameStudios/RabbitClient-CSharp`). **CI** reads `Require.yml` `Default.Infra-CSharp`: `last` is the tip of Infra `master`/`main`, `v*.*.*` is a tag, otherwise a git short SHA. **Release** finds the `Require` item whose `Tag` equals this repo’s tag and checks out that item’s `Infra-CSharp` tag. Missing entries abort the workflow.
+- **Pin Infra-CSharp for releases.** For source builds, keep this repo next to [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) under the same parent (`JLGameStudios/Infra-CSharp` and `JLGameStudios/RabbitClient-CSharp`). **CI** reads `Require.yml` `Default.Infra-CSharp`. **Release** finds the `Require` item whose `Tag` equals this repo’s tag and uses that item’s `Infra-CSharp`. Both fields share the same format: a branch name is the tip of that branch, `v*.*.*` is a tag, otherwise a git short SHA. Missing entries abort the workflow.
 - **Use a matching Rabbit-Home / Rabbit-Server version.** Route queries, framing, and session keys evolve with the protocol; mixing versions can fail handshake or parsing.
 - Tests that need a local Rabbit-Home (default HTTP `127.0.0.1:9000`) and Rabbit-Server are marked `RunOnlyThis` and are skipped in CI.
 - Public API is defined by the source. Socket callbacks use `SynchronizationContext`.
@@ -191,17 +191,17 @@ Pushes and pull requests to `master` run CI (`.github/workflows/CI.yml`). CI rea
 Pushing a `v*.*.*` tag whose commit is on `master` runs Release, which:
 
 1. Looks up that tag in `Require.yml`
-2. Checks out the mapped Infra-CSharp tag
+2. Checks out the mapped Infra-CSharp ref
 3. Builds Debug / Release `netstandard2.0` DLL zips and creates a GitHub Release
 
 `Require.yml` example:
 
 ```yaml
 Default:
-  Infra-CSharp: v1.4.1   # CI: last | v*.*.* | commit SHA
+  Infra-CSharp: v1.4.1   # branch | v*.*.* | commit SHA
 Require:
   - Tag: v1.2.1
-    Infra-CSharp: v1.4.1
+    Infra-CSharp: v1.4.1   # same format as Default
 ```
 
 ## License

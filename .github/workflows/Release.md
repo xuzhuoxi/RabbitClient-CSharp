@@ -42,7 +42,7 @@ GitHub 无法在 `on.push` 里把 `branches` 和 `tags` 组合成「只在 maste
 - **Settings → Actions → General → Workflow permissions** 允许 workflow 申请写权限（文件内已声明 `contents: write`）。
 - 没有规则集禁止创建 `v*` tag。
 - `Require.yml` 的 `Require` 数组中必须有一项 `Tag` 等于本次发版 tag，且该项有 `Infra-CSharp` 字段。
-- `xuzhuoxi/Infra-CSharp` 可公开检出。
+- 本仓库为公开（否则默认 `GITHUB_TOKEN` 无法拉 Infra）。`xuzhuoxi/Infra-CSharp` 可公开检出。
 
 ## 4. 人工操作流程
 
@@ -50,7 +50,7 @@ GitHub 无法在 `on.push` 里把 `branches` 和 `tags` 组合成「只在 maste
 
 ### 4.1 更新依赖映射
 
-在 `Require.yml` 中为本次 tag 增加（或确认已有）对应项，例如 tag `v1.2.1` 依赖 Infra `v1.4.1`：
+在 `Require.yml` 中为本次 tag 增加（或确认已有）对应项。`Infra-CSharp` 格式与 `Default.Infra-CSharp` 相同：分支名（该分支最新提交）、`v*.*.*` tag、或 git 短哈希。例如 tag `v1.2.1` 依赖 Infra `v1.4.1`：
 
 ```yaml
 Require:
@@ -102,8 +102,8 @@ git push <remote> v1.0.3
 | --- | --- |
 | checkout | 将本仓库完整克隆到 `RabbitClient-CSharp/`，以便校验 tag 与 `master` 的祖先关系 |
 | Ensure tag is on master | `git merge-base --is-ancestor $GITHUB_SHA origin/master`，不在 `master` 则失败 |
-| Resolve Infra-CSharp ref | 读取 `Require.yml`，找到 `Tag` 等于 `$GITHUB_REF_NAME` 的项并输出 `Infra-CSharp`；找不到则中止 |
-| checkout Infra-CSharp | 按上一步的 tag 匿名 `git clone` 到兄弟目录 `Infra-CSharp/`，满足 csproj 的旁路 `ProjectReference` |
+| Resolve Infra-CSharp ref | 读取 `Require.yml`，找到 `Tag` 等于 `$GITHUB_REF_NAME` 的项，按与 `Default` 相同的规则解析 `Infra-CSharp`；找不到则中止 |
+| checkout Infra-CSharp | `actions/checkout` 按上一步解析出的 `ref` 检出到兄弟目录 `Infra-CSharp/`，满足 csproj 的旁路 `ProjectReference` |
 | setup-dotnet | 使用 .NET 8 SDK（可同时构建 `netstandard2.0` 类库与 `net8.0` 测试项目） |
 | Build release packages | `dotnet build` Debug 与 Release、打包两份 DLL zip、生成 `SHA256SUMS.txt` |
 | Create GitHub Release | 组装说明（手写文件 + 自动 notes）、创建 Release；若已存在则覆盖附件并更新正文 |
@@ -134,7 +134,7 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 4. **已存在的 tag 再 `git push` 不会再次触发。** 需要新版本时打新 tag。若必须复用同一 tag，需先处理远程 tag 与已有 Release，操作不可逆，应谨慎。
 5. **没有人工审批。** tag 推送成功且校验通过后会直接发布，不会先做成 draft。
 6. **测试项目依赖均为公开 NuGet 包**，构建不需要额外 private token。本工作流 **不** 打包、也不推送自身到 nuget.org / GitHub Packages。
-7. **旁路 Infra-CSharp。** 版本只来自 `Require.yml` 中当前 tag 对应项的 `Infra-CSharp` 字段。找不到该项时工作流会中止并输出提示，不会回退到 `master`。
+7. **旁路 Infra-CSharp。** 版本只来自 `Require.yml` 中当前 tag 对应项的 `Infra-CSharp` 字段（分支名 / `v*.*.*` / 短哈希，与 `Default` 相同）。找不到该项时工作流会中止并输出提示，不会回退到 `Default`。
 
 ## 9. 常见失败
 
@@ -142,8 +142,8 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | --- | --- |
 | 推了 tag 但没有出现 Release 工作流 | tag 不符合 `v*.*.*`；或 Actions 未启用 |
 | Ensure tag is on master 失败 | tag 打在非 `master` 提交上；远程 `master` 尚未包含该提交 |
-| Resolve Infra-CSharp ref 失败 | `Require.yml` 缺少当前 tag 的项，或该项没有 `Infra-CSharp` 字段 |
-| checkout Infra-CSharp 报 `Repository not found` | 本仓库为私有时默认 `GITHUB_TOKEN` 不能拉其它仓库；须使用匿名 `git clone` 的 `Release.yml`，不要用 `actions/checkout` 拉 Infra |
+| Resolve Infra-CSharp ref 失败 | `Require.yml` 缺少当前 tag 的项，或该项没有 `Infra-CSharp` 字段，或该字段不是分支名 / `v*.*.*` / 短哈希，或 Infra 上没有该分支 |
+| checkout Infra-CSharp 报 `Repository not found` | 本仓库仍为私有；或 `INFRA_REPO` 写错 |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 创建 Release 权限错误 | 仓库/组织限制了 `GITHUB_TOKEN` 写权限 |
 | Release 正文没有手写说明 | 缺少 `notes/release/ReleaseNotes_<tag>.md`，或文件名与 tag 不一致，或该文件不在被 tag 的提交中 |
@@ -154,8 +154,8 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | 路径 | 用途 |
 | --- | --- |
 | `.github/workflows/Release.yml` | 发版工作流 |
-| `.github/scripts/resolve-infra-ref.py` | 从 `Require.yml` 解析 Infra-CSharp tag |
-| `Require.yml` | 本仓库 tag 到 Infra-CSharp tag 的映射 |
+| `.github/scripts/resolve-infra-ref.py` | 从 `Require.yml` 解析 Infra-CSharp ref（分支 / tag / 短哈希） |
+| `Require.yml` | 本仓库 tag 到 Infra-CSharp 版本的映射 |
 | `notes/release/ReleaseNotes.md` | 手写说明模板（不会被自动读取） |
 | `notes/release/ReleaseNotes_<tag>.md` | 对应 tag 的正式说明 |
 | `.cursor/skills/generate-note/` | 根据本地提交范围生成说明文件 |

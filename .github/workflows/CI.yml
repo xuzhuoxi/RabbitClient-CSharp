@@ -28,37 +28,20 @@ jobs:
         with:
           fetch-depth: 0
           path: RabbitClient-CSharp
-      # CI 读 Require.yml 的 Default.Infra-CSharp：last / v*.*.* / 提交短哈希
+      # CI 读 Require.yml 的 Default.Infra-CSharp：分支名 / v*.*.* / 提交短哈希
       - name: Resolve Infra-CSharp ref
         id: infra_ref
         run: |
           set -euo pipefail
           python3 -m pip install --quiet pyyaml
           python3 .github/scripts/resolve-infra-ref.py Require.yml --default
-      # 不用 actions/checkout 拉 Infra：不写 token 仍会用本仓库 GITHUB_TOKEN，
-      # 私有仓库用它去拉其它公开仓库会 404。匿名 git clone，并去掉 extraheader。
+      # 本仓库公开后，默认 GITHUB_TOKEN 即可拉其它公开仓库。
       - name: Checkout Infra-CSharp
-        env:
-          INFRA_REF: ${{ steps.infra_ref.outputs.ref }}
-          INFRA_KIND: ${{ steps.infra_ref.outputs.kind }}
-        run: |
-          set -euo pipefail
-          dest="${GITHUB_WORKSPACE}/Infra-CSharp"
-          url="https://github.com/${INFRA_REPO}.git"
-          ref="${INFRA_REF}"
-          kind="${INFRA_KIND:-}"
-          export GIT_TERMINAL_PROMPT=0
-          rm -rf "${dest}"
-          git_anon=(git -c "http.https://github.com/.extraheader=")
-          if [[ "${kind}" == "sha" ]]; then
-            "${git_anon[@]}" clone --filter=blob:none "${url}" "${dest}"
-            "${git_anon[@]}" -C "${dest}" checkout "${ref}"
-          else
-            "${git_anon[@]}" clone --depth 1 --branch "${ref}" "${url}" "${dest}"
-          fi
-          echo "Checked out Infra-CSharp at ${ref} (kind=${kind:-tag})"
-          git -C "${dest}" log -1 --oneline
-        working-directory: ${{ github.workspace }}
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          ref: ${{ steps.infra_ref.outputs.ref }}
+          path: Infra-CSharp
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
