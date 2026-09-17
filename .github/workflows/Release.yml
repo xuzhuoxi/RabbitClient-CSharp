@@ -1,3 +1,7 @@
+# 为当前token授权，可访问公开仓库
+permissions:
+  contents: read
+
 # 发版流程、注意事项见同目录 Release.md
 name: Release
 
@@ -49,14 +53,12 @@ jobs:
           python3 -m pip install --quiet pyyaml
           python3 .github/scripts/resolve-infra-ref.py Require.yml "${GITHUB_REF_NAME}" --strict
 
-      # token 置空：不使用本仓库 GITHUB_TOKEN 去拉 Infra。
       - name: Checkout Infra-CSharp
         uses: actions/checkout@v7
         with:
           repository: ${{ env.INFRA_REPO }}
           ref: ${{ steps.infra_ref.outputs.ref }}
           path: Infra-CSharp
-          token: ""
 
       - uses: actions/setup-dotnet@v5
         with:
