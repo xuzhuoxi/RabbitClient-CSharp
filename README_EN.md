@@ -34,7 +34,7 @@ Releases are Debug / Release DLL zips on GitHub; NuGet packing is not enabled ye
 
 ## Notes
 
-- **Pin Infra-CSharp to the mapped tag.** For source builds, keep this repo next to [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) under the same parent (`JLGameStudios/Infra-CSharp` and `JLGameStudios/RabbitClient-CSharp`). CI / Release do not always check out Infra `master`. They read root `Require.yml`, find the `Require` item whose `Tag` equals this repo’s tag, and check out that item’s `Infra-CSharp` tag. Missing entries abort the workflow.
+- **Pin Infra-CSharp for releases.** For source builds, keep this repo next to [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) under the same parent (`JLGameStudios/Infra-CSharp` and `JLGameStudios/RabbitClient-CSharp`). **CI** reads `Require.yml` `Default.Infra-CSharp`: `last` is the tip of Infra `master`/`main`, `v*.*.*` is a tag, otherwise a git short SHA. **Release** finds the `Require` item whose `Tag` equals this repo’s tag and checks out that item’s `Infra-CSharp` tag. Missing entries abort the workflow.
 - **Use a matching Rabbit-Home / Rabbit-Server version.** Route queries, framing, and session keys evolve with the protocol; mixing versions can fail handshake or parsing.
 - Tests that need a local Rabbit-Home (default HTTP `127.0.0.1:9000`) and Rabbit-Server are marked `RunOnlyThis` and are skipped in CI.
 - Public API is defined by the source. Socket callbacks use `SynchronizationContext`.
@@ -70,7 +70,7 @@ RabbitClient-CSharp/
 ├── RabbitClient-Test/            # Tests (net8.0)
 ├── RabbitClient-API/             # Bilingual API docs
 ├── notes/release/                # Release-note template and per-tag notes
-├── Require.yml                   # This repo’s tag → Infra-CSharp tag
+├── Require.yml                   # CI default Infra version; Release tag map
 ├── .github/workflows/            # CI / Release / ReleaseNote
 └── RabbitClient-CSharp.sln
 ```
@@ -166,7 +166,7 @@ You can also use `RabbitHomeClient` alone, then construct `RabbitSocketServer` /
 - **[MMO](RabbitClient-API/en/JLGames.RabbitClient.Server.MMO.md)**
 - **[RabbitClient](RabbitClient-API/en/JLGames.RabbitClient.md)**
 
-Release tagging is documented in [Release.md](.github/workflows/Release.md). Updating notes on an existing release is documented in [ReleaseNote.md](.github/workflows/ReleaseNote.md). Per-tag notes live at `notes/release/ReleaseNotes_<tag>.md`. Root `CHANGELOG.md` is historical and no longer appended.
+CI is documented in [CI.md](.github/workflows/CI.md). Release tagging is documented in [Release.md](.github/workflows/Release.md). Updating notes on an existing release is documented in [ReleaseNote.md](.github/workflows/ReleaseNote.md). Per-tag notes live at `notes/release/ReleaseNotes_<tag>.md`. Root `CHANGELOG.md` is historical and no longer appended.
 
 ## Building and testing
 
@@ -184,7 +184,7 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj --filter "Category!=RunOn
 - **Debug**: `RabbitClient/bin/Debug/netstandard2.0/`
 - **Release**: `RabbitClient/bin/Release/netstandard2.0/`
 
-Pushes and pull requests to `master` run CI (`.github/workflows/CI.yml`). Infra is resolved from `Require.yml`. Manual CI runs may pass this repo’s tag; if omitted, the last `Require.yml` item is used.
+Pushes and pull requests to `master` run CI (`.github/workflows/CI.yml`). CI reads `Require.yml` `Default.Infra-CSharp` to choose the Infra version.
 
 ## Releasing
 
@@ -197,6 +197,8 @@ Pushing a `v*.*.*` tag whose commit is on `master` runs Release, which:
 `Require.yml` example:
 
 ```yaml
+Default:
+  Infra-CSharp: v1.4.1   # CI: last | v*.*.* | commit SHA
 Require:
   - Tag: v1.2.1
     Infra-CSharp: v1.4.1

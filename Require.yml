@@ -1,5 +1,10 @@
-# 本仓库 tag 与旁路依赖 Infra-CSharp tag 的对应。
-# CI / Release 按当前 tag 查找 Tag，再用该项的 Infra-CSharp 检出依赖。
+# Default.Infra-CSharp 供 CI 使用，取值三类：
+#   last     — Infra 仓库 master/main 的最新提交
+#   v*.*.*   — Infra tag，例如 v1.4.1
+#   短哈希   — Infra 某次 git 提交（7–40 位十六进制）
+# Require 数组供 Release 使用：本仓库 Tag → Infra-CSharp tag
+Default:
+  Infra-CSharp: v1.4.1
 Require:
   - Tag: v1.2.1
     Infra-CSharp: v1.4.1

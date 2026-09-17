@@ -1,3 +1,4 @@
+# 构建、测试与覆盖率流程见同目录 CI.md
 name: CI
 on:
   push:
@@ -7,11 +8,6 @@ on:
     branches:
       - master
   workflow_dispatch:
-    inputs:
-      tag:
-        description: '本仓库 tag（对应 Require.yml 的 Tag）；留空则使用 Require.yml 最后一项'
-        required: false
-        type: string
 
 env:
   INFRA_REPO: xuzhuoxi/Infra-CSharp
@@ -32,17 +28,13 @@ jobs:
         with:
           fetch-depth: 0
           path: RabbitClient-CSharp
+      # CI 读 Require.yml 的 Default.Infra-CSharp：last / v*.*.* / 提交短哈希
       - name: Resolve Infra-CSharp ref
         id: infra_ref
-        env:
-          LOOKUP_TAG: ${{ github.event.inputs.tag || '' }}
         run: |
           set -euo pipefail
-          tag="${LOOKUP_TAG#"${LOOKUP_TAG%%[![:space:]]*}"}"
-          tag="${tag%"${tag##*[![:space:]]}"}"
-          tag="${tag#refs/tags/}"
           python3 -m pip install --quiet pyyaml
-          python3 .github/scripts/resolve-infra-ref.py Require.yml "${tag}"
+          python3 .github/scripts/resolve-infra-ref.py Require.yml --default
       - uses: actions/checkout@v7
         with:
           repository: ${{ env.INFRA_REPO }}

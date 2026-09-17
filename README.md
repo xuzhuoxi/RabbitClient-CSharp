@@ -34,7 +34,7 @@ RabbitClient-CSharp 面向需要动态发现后端的客户端：先向 Rabbit-H
 
 ## 注意事项
 
-- **与 Infra-CSharp 对齐版本。** 本地源码构建时，本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 须位于同一父目录（`JLGameStudios/Infra-CSharp` 与 `JLGameStudios/RabbitClient-CSharp`）。CI / Release 不固定检 `master`，而是读根目录 `Require.yml`：在 `Require` 数组中找到 `Tag` 等于本仓库 tag 的项，再用该项的 `Infra-CSharp` 检出依赖。找不到对应项时工作流会中止。
+- **与 Infra-CSharp 对齐版本。** 本地源码构建时，本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 须位于同一父目录（`JLGameStudios/Infra-CSharp` 与 `JLGameStudios/RabbitClient-CSharp`）。**CI** 读取 `Require.yml` 的 `Default.Infra-CSharp`：`last` 表示 Infra `master`/`main` 最新提交，`v*.*.*` 表示 tag，否则为 git 提交短哈希。**Release** 在 `Require` 数组中查找 `Tag` 等于本仓库 tag 的项，再用该项的 `Infra-CSharp` 检出依赖；找不到对应项时工作流会中止。
 - **与 Rabbit-Home / Rabbit-Server 互通时请使用匹配的服务端版本。** 路由查询、消息分帧和会话密钥随协议演进，混用版本可能导致无法握手或解析失败。
 - 依赖本机 Rabbit-Home（默认 HTTP `127.0.0.1:9000`）和 Rabbit-Server 的用例标了 `RunOnlyThis`，CI 中会跳过。
 - 公开 API 以源码为准。线程上下文类型为 `SynchronizationContext`。
@@ -70,7 +70,7 @@ RabbitClient-CSharp/
 ├── RabbitClient-Test/            # 测试（net8.0）
 ├── RabbitClient-API/             # 中英 API 文档
 ├── notes/release/                # 发行说明模板与各 tag 说明
-├── Require.yml                   # 本仓库 tag → Infra-CSharp tag
+├── Require.yml                   # CI 默认 Infra 版本；Release 的 tag 映射
 ├── .github/workflows/            # CI / Release / ReleaseNote
 └── RabbitClient-CSharp.sln
 ```
@@ -166,7 +166,7 @@ await manager.ConnectThroughHome("platformId", "typeName", randomAesKey: true);
 - **[MMO](RabbitClient-API/en/JLGames.RabbitClient.Server.MMO.md)**
 - **[RabbitClient](RabbitClient-API/en/JLGames.RabbitClient.md)**
 
-发版流程见 [Release 说明](.github/workflows/Release.md)。补写已发布说明见 [ReleaseNote 说明](.github/workflows/ReleaseNote.md)。各 tag 说明在 `notes/release/ReleaseNotes_<tag>.md`。根目录 `CHANGELOG.md` 为历史记录，不再追加。
+CI 流程见 [CI 说明](.github/workflows/CI.md)。发版流程见 [Release 说明](.github/workflows/Release.md)。补写已发布说明见 [ReleaseNote 说明](.github/workflows/ReleaseNote.md)。各 tag 说明在 `notes/release/ReleaseNotes_<tag>.md`。根目录 `CHANGELOG.md` 为历史记录，不再追加。
 
 ## 构建与测试
 
@@ -184,7 +184,7 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj --filter "Category!=RunOn
 - **Debug**: `RabbitClient/bin/Debug/netstandard2.0/`
 - **Release**: `RabbitClient/bin/Release/netstandard2.0/`
 
-推送到 `master` 或向 `master` 开 Pull Request 时运行 CI（`.github/workflows/CI.yml`），Infra 版本按 `Require.yml` 解析。手动运行 CI 时可填写本仓库 tag；留空则使用 `Require.yml` 最后一项。
+推送到 `master` 或向 `master` 开 Pull Request 时运行 CI（`.github/workflows/CI.yml`）。CI 读取 `Require.yml` 的 `Default.Infra-CSharp` 决定 Infra 版本。
 
 ## 发版
 
@@ -197,6 +197,8 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj --filter "Category!=RunOn
 `Require.yml` 示例：
 
 ```yaml
+Default:
+  Infra-CSharp: v1.4.1   # CI：last | v*.*.* | 提交短哈希
 Require:
   - Tag: v1.2.1
     Infra-CSharp: v1.4.1
