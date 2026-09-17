@@ -143,6 +143,7 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | 推了 tag 但没有出现 Release 工作流 | tag 不符合 `v*.*.*`；或 Actions 未启用 |
 | Ensure tag is on master 失败 | tag 打在非 `master` 提交上；远程 `master` 尚未包含该提交 |
 | Resolve Infra-CSharp ref 失败 | `Require.yml` 缺少当前 tag 的项，或该项没有 `Infra-CSharp` 字段 |
+| checkout Infra-CSharp 报 `Repository not found` | 本仓库为私有时默认 `GITHUB_TOKEN` 不能拉其它仓库；须使用已把 Infra `token` 置空的 `Release.yml` |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 创建 Release 权限错误 | 仓库/组织限制了 `GITHUB_TOKEN` 写权限 |
 | Release 正文没有手写说明 | 缺少 `notes/release/ReleaseNotes_<tag>.md`，或文件名与 tag 不一致，或该文件不在被 tag 的提交中 |

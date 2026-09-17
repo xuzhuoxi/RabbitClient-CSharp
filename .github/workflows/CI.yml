@@ -35,11 +35,15 @@ jobs:
           set -euo pipefail
           python3 -m pip install --quiet pyyaml
           python3 .github/scripts/resolve-infra-ref.py Require.yml --default
+      # 本仓库若为私有，checkout 默认带上 GITHUB_TOKEN 去拉其它仓库会 404
+      #（即使 Infra-CSharp 是公开的）。token 置空走匿名 HTTPS。
       - uses: actions/checkout@v7
         with:
           repository: ${{ env.INFRA_REPO }}
           path: Infra-CSharp
           ref: ${{ steps.infra_ref.outputs.ref }}
+          token: ""
+          persist-credentials: false
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
