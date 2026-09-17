@@ -59,6 +59,7 @@ jobs:
           repository: ${{ env.INFRA_REPO }}
           ref: ${{ steps.infra_ref.outputs.ref }}
           path: Infra-CSharp
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-dotnet@v5
         with:
