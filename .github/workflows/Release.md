@@ -103,7 +103,7 @@ git push <remote> v1.0.3
 | checkout | 将本仓库完整克隆到 `RabbitClient-CSharp/`，以便校验 tag 与 `master` 的祖先关系 |
 | Ensure tag is on master | `git merge-base --is-ancestor $GITHUB_SHA origin/master`，不在 `master` 则失败 |
 | Resolve Infra-CSharp ref | 读取 `Require.yml`，找到 `Tag` 等于 `$GITHUB_REF_NAME` 的项并输出 `Infra-CSharp`；找不到则中止 |
-| checkout Infra-CSharp | 按上一步的 tag 检出到兄弟目录 `Infra-CSharp/`，满足 csproj 的旁路 `ProjectReference` |
+| checkout Infra-CSharp | 按上一步的 tag 匿名 `git clone` 到兄弟目录 `Infra-CSharp/`，满足 csproj 的旁路 `ProjectReference` |
 | setup-dotnet | 使用 .NET 8 SDK（可同时构建 `netstandard2.0` 类库与 `net8.0` 测试项目） |
 | Build release packages | `dotnet build` Debug 与 Release、打包两份 DLL zip、生成 `SHA256SUMS.txt` |
 | Create GitHub Release | 组装说明（手写文件 + 自动 notes）、创建 Release；若已存在则覆盖附件并更新正文 |
@@ -143,7 +143,7 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | 推了 tag 但没有出现 Release 工作流 | tag 不符合 `v*.*.*`；或 Actions 未启用 |
 | Ensure tag is on master 失败 | tag 打在非 `master` 提交上；远程 `master` 尚未包含该提交 |
 | Resolve Infra-CSharp ref 失败 | `Require.yml` 缺少当前 tag 的项，或该项没有 `Infra-CSharp` 字段 |
-| checkout Infra-CSharp 报 `Repository not found` | 本仓库为私有时默认 `GITHUB_TOKEN` 不能拉其它仓库；须使用已把 Infra `token` 置空的 `Release.yml` |
+| checkout Infra-CSharp 报 `Repository not found` | 本仓库为私有时默认 `GITHUB_TOKEN` 不能拉其它仓库；须使用匿名 `git clone` 的 `Release.yml`，不要用 `actions/checkout` 拉 Infra |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 创建 Release 权限错误 | 仓库/组织限制了 `GITHUB_TOKEN` 写权限 |
 | Release 正文没有手写说明 | 缺少 `notes/release/ReleaseNotes_<tag>.md`，或文件名与 tag 不一致，或该文件不在被 tag 的提交中 |

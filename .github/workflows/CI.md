@@ -14,7 +14,7 @@
 4. 运行单元测试（跳过依赖本机服务的用例）并收集覆盖率
 5. 若有 cobertura 报告，上传到 Codecov
 
-不创建 GitHub Release，不打包 DLL zip。本仓库读写仍用自动注入的 `GITHUB_TOKEN`。检出公开的 Infra-CSharp 时 **不能** 带上该 token：本仓库若为私有，用 `GITHUB_TOKEN` 去 clone 其它仓库（即使对方公开）GitHub 会返回 `Repository not found`。工作流因此把 Infra 的 `token` 置空，走匿名 HTTPS。
+不创建 GitHub Release，不打包 DLL zip。本仓库读写仍用自动注入的 `GITHUB_TOKEN`。检出公开的 Infra-CSharp 时 **不能** 带上该 token：本仓库若为私有，用 `GITHUB_TOKEN` 去 clone 其它仓库（即使对方公开）GitHub 会返回 `Repository not found`。`actions/checkout` 不写 `token` 仍会默认用 `GITHUB_TOKEN`，因此 Infra 改为匿名 `git clone`，并清掉上一检出写入的 `extraheader`。
 
 可调整常量在 `CI.yml` 顶部的 `env`：`INFRA_REPO`（旁路依赖仓库，默认 `xuzhuoxi/Infra-CSharp`）。
 
@@ -88,7 +88,7 @@ Require:
 | --- | --- |
 | checkout 本仓库 | 克隆到 `RabbitClient-CSharp/`（`fetch-depth: 0`） |
 | Resolve Infra-CSharp ref | 安装 PyYAML，按 `Default.Infra-CSharp` 写出 `ref` |
-| checkout Infra-CSharp | 匿名检出到兄弟目录 `Infra-CSharp/`（`token` 为空，避免私有本仓库的 `GITHUB_TOKEN` 导致 404） |
+| checkout Infra-CSharp | 匿名 `git clone` 到兄弟目录 `Infra-CSharp/`（不用 `actions/checkout`，避免默认 `GITHUB_TOKEN` 导致 404） |
 | setup-dotnet | .NET 8 SDK（构建 `netstandard2.0` 主库与 `net8.0` 测试） |
 | Run build | `dotnet build RabbitClient-CSharp.sln --configuration Release` |
 | Run test with coverage | `dotnet test`，`--filter Category!=RunOnlyThis`，收集 cobertura |
@@ -109,9 +109,9 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj
 
 1. **改 `Default.Infra-CSharp` 后要推到会跑 CI 的分支。** 手动 Run workflow 读的是所选分支上的 `Require.yml`，不是你本机未推送的修改。
 2. **CI 与 Release 用的 Infra 可以不同。** CI 看 `Default`；Release 看 `Require` 数组里与发版 tag 对应的项。发版前请确认 `Require` 中该项已写好。
-3. **短哈希过短或 Infra 侧没有该提交**，`actions/checkout` 会失败。建议至少 7 位，且该提交对公开仓库可见。
+3. **短哈希过短或 Infra 侧没有该提交**，匿名 clone 会失败。建议至少 7 位，且该提交对公开仓库可见。
 4. **覆盖率不是硬性门槛。** 没有 cobertura 文件时跳过上传；Codecov 出错也不使 job 失败。
-5. **不要用本仓库的 `GITHUB_TOKEN` 去 clone Infra。** 本仓库为私有时，该 token 访问其它仓库（含公开仓库）会 404。Infra 检出已把 `token` 置空。
+5. **不要用本仓库的 `GITHUB_TOKEN` 去 clone Infra。** 本仓库为私有时，该 token 访问其它仓库（含公开仓库）会 404。Infra 用匿名 `git clone`，不经过 `actions/checkout`。
 6. **本工作流不发版。** 推 tag 请看 [Release.md](Release.md)。
 
 ## 8. 常见失败
@@ -119,7 +119,7 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj
 | 现象 | 可能原因 |
 | --- | --- |
 | Resolve Infra-CSharp ref 失败 | 缺少 `Default` / `Default.Infra-CSharp`；值不是 `last`、`v*.*.*` 或十六进制短哈希 |
-| checkout Infra-CSharp 报 `Repository not found` | 本仓库为私有时，默认 `GITHUB_TOKEN` 不能拉其它仓库（含公开的 Infra）。须使用已把 Infra `token` 置空的 `CI.yml` |
+| checkout Infra-CSharp 报 `Repository not found` | 本仓库为私有时，默认 `GITHUB_TOKEN` 不能拉其它仓库（含公开的 Infra）。须使用匿名 `git clone` 的 `CI.yml`，不要用 `actions/checkout` 拉 Infra |
 | checkout Infra-CSharp 找不到 ref | tag 或短哈希在 Infra 上不存在；`last` 时远程没有 `master`/`main` |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 构建失败 | Infra 版本与当前主库 API 不兼容（可把 `Default` 换成已知可用的 tag） |

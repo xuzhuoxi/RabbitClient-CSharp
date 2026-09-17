@@ -49,7 +49,16 @@ def default_branch(repo: str) -> str | None:
     remote = f"https://github.com/{repo}.git"
     for name in ("master", "main"):
         proc = subprocess.run(
-            ["git", "ls-remote", "--exit-code", "--heads", remote, f"refs/heads/{name}"],
+            [
+                "git",
+                "-c",
+                "http.https://github.com/.extraheader=",
+                "ls-remote",
+                "--exit-code",
+                "--heads",
+                remote,
+                f"refs/heads/{name}",
+            ],
             capture_output=True,
             text=True,
         )
@@ -112,7 +121,7 @@ def resolve_require_tag(data: dict, want: str, strict: bool) -> int:
     if not infra:
         return fail(f"Tag {selected} 缺少 Infra-CSharp 字段，工作流已中止。")
 
-    write_output(ref=infra, tag=selected)
+    write_output(ref=infra, tag=selected, kind="tag")
     print(f"Using Infra-CSharp {infra} (Require.yml Tag={selected})")
     return 0
 
