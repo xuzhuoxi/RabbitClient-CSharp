@@ -19,7 +19,6 @@ env:
   # PACKAGE_ID: JLGames.RabbitClient  # NuGet 打包暂不启用
   TARGET_TFM: netstandard2.0
   INFRA_REPO: xuzhuoxi/Infra-CSharp
-  INFRA_DEFAULT_REF: master
 
 jobs:
   release:
@@ -47,15 +46,8 @@ jobs:
         id: infra_ref
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
-          if git ls-remote --exit-code --tags "https://github.com/${INFRA_REPO}.git" "refs/tags/${tag}" >/dev/null; then
-            echo "ref=${tag}" >> "$GITHUB_OUTPUT"
-            echo "Using Infra-CSharp tag ${tag}"
-          else
-            echo "ref=${INFRA_DEFAULT_REF}" >> "$GITHUB_OUTPUT"
-            echo "Infra-CSharp has no tag ${tag}; using ${INFRA_DEFAULT_REF}"
-          fi
-        working-directory: ${{ github.workspace }}
+          python3 -m pip install --quiet pyyaml
+          python3 .github/scripts/resolve-infra-ref.py Require.yml "${GITHUB_REF_NAME}" --strict
 
       - uses: actions/checkout@v7
         with:

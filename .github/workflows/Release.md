@@ -7,14 +7,14 @@
 在 `master` 上推送符合规则的 tag 后，自动：
 
 1. 确认该 tag 指向的提交位于 `master`
-2. 检出旁路依赖 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp)（优先同名 tag，没有则用 `master`）
+2. 读取 `Require.yml`，按当前 tag 找到 `Tag` 相同的项，用该项的 `Infra-CSharp` 检出旁路依赖 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp)
 3. 分别以 Debug / Release 配置打包类库（两份 `netstandard2.0` DLL 压缩包）
 4. 生成校验和
 5. 创建（或更新附件的）GitHub Release
 
 不需要手动配置 `GITHUB_TOKEN`。GitHub 会为每次运行注入临时令牌；workflow 已声明 `contents: write`，用于创建 Release 和上传附件。
 
-可调整常量在 `Release.yml` 顶部的 `env`：`APP_NAME`（zip 名）、`DLL_NAME`（程序集名）、`TARGET_TFM`（目标框架）、`INFRA_REPO` / `INFRA_DEFAULT_REF`（旁路依赖）。
+可调整常量在 `Release.yml` 顶部的 `env`：`APP_NAME`（zip 名）、`DLL_NAME`（程序集名）、`TARGET_TFM`（目标框架）、`INFRA_REPO`（旁路依赖仓库）。
 
 本仓库是 **.NET 类库**，不会交叉编译各平台可执行文件。NuGet 打包（`dotnet pack` / nupkg）目前已注释，也不推 nuget.org 或 GitHub Packages。
 
@@ -41,13 +41,26 @@ GitHub 无法在 `on.push` 里把 `branches` 和 `tags` 组合成「只在 maste
 - 仓库已启用 Actions。
 - **Settings → Actions → General → Workflow permissions** 允许 workflow 申请写权限（文件内已声明 `contents: write`）。
 - 没有规则集禁止创建 `v*` tag。
-- `xuzhuoxi/Infra-CSharp` 可公开检出。若要对齐 Infra 版本，尽量在 Infra 侧先打好同名 tag。
+- `Require.yml` 的 `Require` 数组中必须有一项 `Tag` 等于本次发版 tag，且该项有 `Infra-CSharp` 字段。
+- `xuzhuoxi/Infra-CSharp` 可公开检出。
 
 ## 4. 人工操作流程
 
 以下命令均在已包含待发布提交的 `master` 上执行。
 
-### 4.1 准备说明（建议）
+### 4.1 更新依赖映射
+
+在 `Require.yml` 中为本次 tag 增加（或确认已有）对应项，例如 tag `v1.2.1` 依赖 Infra `v1.4.1`：
+
+```yaml
+Require:
+  - Tag: v1.2.1
+    Infra-CSharp: v1.4.1
+```
+
+该项必须已经包含在被 tag 的那次提交里。找不到匹配 `Tag` 时，工作流会失败，不会回退到 Infra 的 `master`。
+
+### 4.2 准备说明（建议）
 
 按 tag 名新增说明文件，必须与 tag **完全一致**：
 
@@ -67,7 +80,7 @@ Release 正文规则：
 
 直接推到 `master`、未走 PR 的 commit 不会出现在「What's Changed」条目中。说明文件必须已经包含在被 tag 的那次提交里。
 
-### 4.2 打 tag 并推送
+### 4.3 打 tag 并推送
 
 ```sh
 git checkout master
@@ -78,7 +91,7 @@ git push <remote> v1.0.3
 
 本地远程名可能是 `origin` 或 `github`，以 `git remote -v` 为准。不要在其它分支上打即将发版的 tag。若该提交不在 `master` 上，workflow 会在「Ensure tag is on master」失败退出。
 
-### 4.3 确认结果
+### 4.4 确认结果
 
 1. 仓库 **Actions** 中查看 `Release` 工作流是否成功。
 2. 仓库 **Releases** 中确认标题、说明、附件。
@@ -89,8 +102,8 @@ git push <remote> v1.0.3
 | --- | --- |
 | checkout | 将本仓库完整克隆到 `RabbitClient-CSharp/`，以便校验 tag 与 `master` 的祖先关系 |
 | Ensure tag is on master | `git merge-base --is-ancestor $GITHUB_SHA origin/master`，不在 `master` 则失败 |
-| Resolve Infra-CSharp ref | 同名 tag 存在则用该 tag，否则用 `master` |
-| checkout Infra-CSharp | 检出到兄弟目录 `Infra-CSharp/`，满足 csproj 的旁路 `ProjectReference` |
+| Resolve Infra-CSharp ref | 读取 `Require.yml`，找到 `Tag` 等于 `$GITHUB_REF_NAME` 的项并输出 `Infra-CSharp`；找不到则中止 |
+| checkout Infra-CSharp | 按上一步的 tag 检出到兄弟目录 `Infra-CSharp/`，满足 csproj 的旁路 `ProjectReference` |
 | setup-dotnet | 使用 .NET 8 SDK（可同时构建 `netstandard2.0` 类库与 `net8.0` 测试项目） |
 | Build release packages | `dotnet build` Debug 与 Release、打包两份 DLL zip、生成 `SHA256SUMS.txt` |
 | Create GitHub Release | 组装说明（手写文件 + 自动 notes）、创建 Release；若已存在则覆盖附件并更新正文 |
@@ -121,7 +134,7 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 4. **已存在的 tag 再 `git push` 不会再次触发。** 需要新版本时打新 tag。若必须复用同一 tag，需先处理远程 tag 与已有 Release，操作不可逆，应谨慎。
 5. **没有人工审批。** tag 推送成功且校验通过后会直接发布，不会先做成 draft。
 6. **测试项目依赖均为公开 NuGet 包**，构建不需要额外 private token。本工作流 **不** 打包、也不推送自身到 nuget.org / GitHub Packages。
-7. **旁路 Infra-CSharp。** 没有同名 tag 时会构建 Infra 的 `master`，产物中的 `Infra-CSharp.dll` 可能与本库 tag 不完全对应。需要对齐时先在 Infra 仓库打同名 tag。
+7. **旁路 Infra-CSharp。** 版本只来自 `Require.yml` 中当前 tag 对应项的 `Infra-CSharp` 字段。找不到该项时工作流会中止并输出提示，不会回退到 `master`。
 
 ## 9. 常见失败
 
@@ -129,6 +142,7 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | --- | --- |
 | 推了 tag 但没有出现 Release 工作流 | tag 不符合 `v*.*.*`；或 Actions 未启用 |
 | Ensure tag is on master 失败 | tag 打在非 `master` 提交上；远程 `master` 尚未包含该提交 |
+| Resolve Infra-CSharp ref 失败 | `Require.yml` 缺少当前 tag 的项，或该项没有 `Infra-CSharp` 字段 |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 创建 Release 权限错误 | 仓库/组织限制了 `GITHUB_TOKEN` 写权限 |
 | Release 正文没有手写说明 | 缺少 `notes/release/ReleaseNotes_<tag>.md`，或文件名与 tag 不一致，或该文件不在被 tag 的提交中 |
@@ -139,6 +153,8 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | 路径 | 用途 |
 | --- | --- |
 | `.github/workflows/Release.yml` | 发版工作流 |
+| `.github/scripts/resolve-infra-ref.py` | 从 `Require.yml` 解析 Infra-CSharp tag |
+| `Require.yml` | 本仓库 tag 到 Infra-CSharp tag 的映射 |
 | `notes/release/ReleaseNotes.md` | 手写说明模板（不会被自动读取） |
 | `notes/release/ReleaseNotes_<tag>.md` | 对应 tag 的正式说明 |
 | `.cursor/skills/generate-note/` | 根据本地提交范围生成说明文件 |

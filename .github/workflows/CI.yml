@@ -7,6 +7,15 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      tag:
+        description: '本仓库 tag（对应 Require.yml 的 Tag）；留空则使用 Require.yml 最后一项'
+        required: false
+        type: string
+
+env:
+  INFRA_REPO: xuzhuoxi/Infra-CSharp
+
 jobs:
   build-and-test:
     name: Build and test
@@ -23,11 +32,22 @@ jobs:
         with:
           fetch-depth: 0
           path: RabbitClient-CSharp
+      - name: Resolve Infra-CSharp ref
+        id: infra_ref
+        env:
+          LOOKUP_TAG: ${{ github.event.inputs.tag || '' }}
+        run: |
+          set -euo pipefail
+          tag="${LOOKUP_TAG#"${LOOKUP_TAG%%[![:space:]]*}"}"
+          tag="${tag%"${tag##*[![:space:]]}"}"
+          tag="${tag#refs/tags/}"
+          python3 -m pip install --quiet pyyaml
+          python3 .github/scripts/resolve-infra-ref.py Require.yml "${tag}"
       - uses: actions/checkout@v7
         with:
-          repository: xuzhuoxi/Infra-CSharp
+          repository: ${{ env.INFRA_REPO }}
           path: Infra-CSharp
-          ref: master
+          ref: ${{ steps.infra_ref.outputs.ref }}
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x

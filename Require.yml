@@ -1,0 +1,5 @@
+# 本仓库 tag 与旁路依赖 Infra-CSharp tag 的对应。
+# CI / Release 按当前 tag 查找 Tag，再用该项的 Infra-CSharp 检出依赖。
+Require:
+  - Tag: v1.2.1
+    Infra-CSharp: v1.4.1
