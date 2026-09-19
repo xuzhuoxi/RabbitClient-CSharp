@@ -3,6 +3,7 @@
 [![.NET Standard](https://img.shields.io/badge/.NET%20Standard-2.0-blue.svg)](https://docs.microsoft.com/en-us/dotnet/standard/net-standard)
 [![C#](https://img.shields.io/badge/C%23-7.3+-green.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![CI](https://github.com/xuzhuoxi/RabbitClient-CSharp/actions/workflows/CI.yml/badge.svg)](https://github.com/xuzhuoxi/RabbitClient-CSharp/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/xuzhuoxi/RabbitClient-CSharp/graph/badge.svg)](https://codecov.io/gh/xuzhuoxi/RabbitClient-CSharp)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 简体中文 | [English](README_EN.md)
@@ -18,7 +19,9 @@
 - [目录结构](#目录结构)
 - [安装](#安装)
 - [快速开始](#快速开始)
+- [连接流程](#连接流程)
 - [模块](#模块)
+- [事件](#事件)
 - [API 文档](#api-文档)
 - [构建与测试](#构建与测试)
 - [发版](#发版)
@@ -30,32 +33,33 @@ RabbitClient-CSharp 面向需要动态发现后端的客户端：先向 Rabbit-H
 
 主库目标框架为 **.NET Standard 2.0**（C# 7.3），可在 Windows、macOS、Linux 上使用。测试项目为 **net8.0**。
 
-当前以 GitHub Release 的 Debug / Release DLL zip 分发；NuGet 打包尚未启用。
+当前以 GitHub Release 的 Debug / Release DLL zip 分发；NuGet 打包尚未启用。最新发行说明见 [`notes/release/`](notes/release/)。
 
 ## 注意事项
 
-- **与 Infra-CSharp 对齐版本。** 本地源码构建时，本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 须位于同一父目录（`JLGameStudios/Infra-CSharp` 与 `JLGameStudios/RabbitClient-CSharp`）。**CI** 读取 `Require.yml` 的 `Default.Infra-CSharp`。**Release** 在 `Require` 数组中查找 `Tag` 等于本仓库 tag 的项，再用该项的 `Infra-CSharp`。两处字段格式相同：分支名表示该分支最新提交，`v*.*.*` 表示 tag，否则为 git 提交短哈希。找不到对应项时工作流会中止。
+- **与 Infra-CSharp 对齐版本。** 本地源码构建时，本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 须位于同一父目录（`JLGameStudios/Infra-CSharp` 与 `JLGameStudios/RabbitClient-CSharp`）。**CI** 读取 `Require.yml` 的 `Default.Infra-CSharp`。**Release** 在 `Require` 数组中查找 `Tag` 等于本仓库 tag 的项，再用该项的 `Infra-CSharp`。两处字段格式相同：分支名表示该分支最新提交，`v*.*.*` 表示 tag，否则为 git 提交短哈希。找不到对应项时工作流会中止，不会回退到 `Default`。
 - **与 Rabbit-Home / Rabbit-Server 互通时请使用匹配的服务端版本。** 路由查询、消息分帧和会话密钥随协议演进，混用版本可能导致无法握手或解析失败。
 - 依赖本机 Rabbit-Home（默认 HTTP `127.0.0.1:9000`）和 Rabbit-Server 的用例标了 `RunOnlyThis`，CI 中会跳过。
-- 公开 API 以源码为准。线程上下文类型为 `SynchronizationContext`。
+- 公开 API 以源码为准。线程上下文类型为 `SynchronizationContext`。`RabbitClientManager` 实现 `IDisposable`，用完应释放。
 
 ## 功能特性
 
-- **Home 发现**：`RabbitHomeClient` 向 Rabbit-Home 查询可用 Server（GET/POST、可选 RSA 公钥加密查询参数）。
+- **Home 发现**：`RabbitHomeClient` 向 Rabbit-Home 的 `/route` 查询可用 Server（GET/POST，查询键 `q`；可选 RSA 公钥加密查询参数；默认超时 100 秒）。
 - **统一管理器**：`RabbitClientManager.ConnectThroughHome` 完成查询、连接、设置 AES 会话密钥并开始接收。
 - **Socket 通信**：`RabbitSocketServer` / `RabbitSocketClient` 连接、收发、按 Extension 名称取得 `IEventDispatcher`。
-- **消息协议**：`JLGames.RabbitClient.Server.Message` 下的请求 / 响应读写（`RabbitRequestMsg` / `RabbitResponseMsg`）。
-- **加密会话**：Home 返回的 `OpenSk` 用于 AES；查询阶段可选 RSA。
-- **事件**：连接进度（Home / Server）、连接完成、发送前后、收发失败、MMO 房间/玩家/单位事件。
+- **消息协议**：`JLGames.RabbitClient.Server.Message` 下的请求 / 响应读写（`RabbitRequestMsg` / `RabbitResponseMsg`），默认小端。
+- **加密会话**：查询可带 32 字节临时 AES 密钥；Home 返回的 `OpenSk` 用于后续 Socket 对称加密。查询阶段可选 RSA（PEM 或 PKCS#1）。
+- **事件**：Home / Server 连接进度、连接完成、发送前后、收发失败、MMO 房间/玩家/单位事件。
 - **MMO**：实体（Player / Room / Unit）、变量集 `IVarSet`、Meta 与事件。
 - **线程**：`SetThreadSocketContext(SynchronizationContext)` 将 Socket 回调派发到指定上下文。
 
 ## 技术栈
 
 - **.NET Standard 2.0** / **C# 7.3+**（测试为 C# 10 / net8.0）
-- **NUnit 3**：单元测试
-- **Infra-CSharp**：旁路 `ProjectReference`（网络、事件、加密等），无其它必选 NuGet 包
+- **NUnit 3** + **coverlet**：单元测试与覆盖率
+- **Infra-CSharp**：旁路 `ProjectReference`（网络、事件、加密等），主库无其它必选 NuGet 包
 - **dotnet CLI**：构建与测试
+- **GitHub Actions**：CI、Release、ReleaseNote
 
 ## 目录结构
 
@@ -63,15 +67,22 @@ RabbitClient-CSharp 面向需要动态发现后端的客户端：先向 Rabbit-H
 RabbitClient-CSharp/
 ├── RabbitClient/                 # 主库（netstandard2.0）
 │   └── JLGames/RabbitClient/
-│       ├── Home/                 # Rabbit-Home 查询
-│       ├── Server/               # Socket、消息、MMO
+│       ├── Home/                 # Home 查询、密钥、路由结果
+│       ├── Server/
+│       │   ├── Message/          # 请求 / 响应读写
+│       │   └── MMO/              # 实体、变量、Meta、事件
 │       ├── RabbitClientManager.cs
 │       └── RabbitClientManagerEvents.cs
 ├── RabbitClient-Test/            # 测试（net8.0）
+│   ├── Home/ / Server/ / MMO/    # 不依赖本机服务
+│   ├── Rabbit/                   # 联调（Category=RunOnlyThis）
+│   └── Resources/                # 测试用 PEM 等
 ├── RabbitClient-API/             # 中英 API 文档
 ├── notes/release/                # 发行说明模板与各 tag 说明
 ├── Require.yml                   # CI 默认 Infra 版本；Release 的 tag 映射
-├── .github/workflows/            # CI / Release / ReleaseNote
+├── .github/
+│   ├── workflows/                # CI / Release / ReleaseNote
+│   └── scripts/                  # resolve-infra-ref.py
 └── RabbitClient-CSharp.sln
 ```
 
@@ -86,7 +97,7 @@ RabbitClient-CSharp/
 
 ### 从 GitHub Release 引用 DLL
 
-在 [GitHub Releases](https://github.com/xuzhuoxi/RabbitClient-CSharp/releases) 下载与目标 tag 对应的 zip（文件名形如 `RabbitClient-CSharp_<tag>_release_netstandard2.0.zip` 或 `..._debug_...`），解压后引用 `RabbitClient.dll`。包内同时包含 `Infra-CSharp.dll`、`.pdb`、`.deps.json` 与许可证/说明。
+在 [GitHub Releases](https://github.com/xuzhuoxi/RabbitClient-CSharp/releases) 下载与目标 tag 对应的 zip（文件名形如 `RabbitClient-CSharp_<tag>_release_netstandard2.0.zip` 或 `..._debug_...`），解压后引用 `RabbitClient.dll`。包内同时包含 `Infra-CSharp.dll`、`.pdb`、`.deps.json`、`LICENSE`、`README.md`、`README_EN.md`。同一次 Release 还有 `SHA256SUMS.txt`。
 
 ### 从源码构建
 
@@ -108,6 +119,7 @@ using System.Threading.Tasks;
 using JLGames.Infra.Net;
 using JLGames.RabbitClient;
 using JLGames.RabbitClient.Home;
+using JLGames.RabbitClient.Server.Message;
 
 var homeUrl = "http://127.0.0.1:9000";
 var httpProxy = new HttpClientProxy(homeUrl);
@@ -121,20 +133,55 @@ var manager = new RabbitClientManager(
     pubKeyContent: null);
 
 manager.SetThreadSocketContext(SynchronizationContext.Current);
+manager.AddEventListener(RabbitClientManagerEvents.EventOnProgressHome, evd =>
+{
+    // ProgressEventData<QueryResult>
+});
 manager.AddEventListener(RabbitClientManagerEvents.EventOnConnectFinish, evd =>
 {
     var ok = (bool)evd.Data;
-    if (ok)
-    {
-        // 使用 manager.SocketClient.SendMessage(...) 收发
-        // 使用 manager.SocketClient.GetExtensionDispatcher(name) 订阅 Extension 事件
-    }
+    if (!ok) return;
+
+    manager.SocketClient.GetExtensionDispatcher("Mmo")
+        .AddEventListener("PER", e => { /* RabbitResponseMsg */ });
+
+    var req = new RabbitRequestMsg();
+    req.SetClientId("cid");
+    req.SetProtoInfo("Mmo", "PER");
+    req.StartWriteData();
+    req.WriteRequestBase("hello");
+    manager.SocketClient.SendMessage(req);
 });
 
-await manager.ConnectThroughHome("platformId", "typeName", randomAesKey: true);
+await manager.ConnectThroughHome("main01", "Rabbit-Server", randomAesKey: true);
 ```
 
-也可只使用 `RabbitHomeClient` 查询路由，再自行构造 `RabbitSocketServer` / `RabbitSocketClient`。
+`randomAesKey: true` 时默认用口令 `RabbitClient` 派生 32 字节临时 AES 密钥；也可传入 `byte[]` 或完整 `QueryRouteInfo`。也可用 `HomeSettings` 构造管理器，或只使用 `RabbitHomeClient` 查询路由，再自行构造 `RabbitSocketServer` / `RabbitSocketClient`。
+
+## 连接流程
+
+```mermaid
+sequenceDiagram
+    participant App as 客户端
+    participant Mgr as RabbitClientManager
+    participant Home as Rabbit-Home
+    participant Svr as Rabbit-Server
+
+    App->>Mgr: ConnectThroughHome
+    Mgr->>Home: GET/POST /route（可选 RSA）
+    Home-->>Mgr: OpenAddr + OpenSk
+    Mgr-->>App: EventOnProgressHome
+    Mgr->>Svr: Socket 连接
+    Mgr->>Mgr: AES(OpenSk) + StartReceiving
+    Mgr-->>App: EventOnProgressServer / EventOnConnectFinish
+    App->>Svr: SendMessage(RabbitRequestMsg)
+    Svr-->>App: Extension 分发器 / ProtoId 事件
+```
+
+1. 将 `QueryRouteInfo`（`pid`、`type-name`、可选 `temp-key`）序列化为 JSON，可选 RSA 加密后 Base64，作为 `q` 发往 Home 的 `/route`。
+2. Home 返回实例地址 `OpenAddr`、协议 `OpenNetwork`，以及会话密钥 `OpenSk`（若请求带了 32 字节临时密钥，则先解密）。
+3. `RabbitSocketServer` 按返回地址建立 Socket；成功后用 `OpenSk` 设置 AES，并开始接收。
+4. 发送走 `RabbitRequestMsg`；接收按消息头的 Extension 分发到对应 `IEventDispatcher`，事件名为 `ProtoId`。
 
 ## 模块
 
@@ -145,6 +192,19 @@ await manager.ConnectThroughHome("platformId", "typeName", randomAesKey: true);
 | `JLGames.RabbitClient.Server` | Socket 连接、收发、连接/消息事件 |
 | `JLGames.RabbitClient.Server.Message` | 消息头、请求/响应读写 |
 | `JLGames.RabbitClient.Server.MMO` | 实体、变量、Meta、MMO 事件 |
+
+## 事件
+
+| 来源 | 事件 | 载荷 |
+| --- | --- | --- |
+| `RabbitClientManagerEvents` | `EventOnProgressHome` | `ProgressEventData<QueryResult>` |
+| `RabbitClientManagerEvents` | `EventOnProgressServer` | `ProgressEventData<SocketConnEventInfo>` |
+| `RabbitClientManagerEvents` | `EventOnConnectFinish` | `bool` |
+| `RabbitSocketClientEvents` | `EventOnClientSendMessagePrepare` / `EventOnClientSendMessage` | `MessageContent` |
+| `RabbitSocketClientEvents` | `EventOnClientReceiveMessage` | `IRabbitResponseMsg` |
+| `RabbitSocketClientEvents` | `EventOnClientReceiveMessageFailed` | `FailedInfo` |
+| `RabbitSocketServerEvents` | `EventOnConnectionOpenSuc` / `Fail` / `Close` | 连接信息 |
+| `RabbitSocketClient.GetExtensionDispatcher` | 消息头 `ProtoId` | `RabbitResponseMsg` |
 
 ## API 文档
 
@@ -170,20 +230,27 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj
 
 # 与 CI 相同：跳过依赖本机服务的用例
 dotnet test RabbitClient-Test/RabbitClient-Test.csproj --filter "Category!=RunOnlyThis"
+
+# 收集覆盖率（与 CI 相同）
+dotnet test RabbitClient-Test/RabbitClient-Test.csproj \
+  --filter "Category!=RunOnlyThis" \
+  --collect:"XPlat Code Coverage"
 ```
 
 - **Debug**: `RabbitClient/bin/Debug/netstandard2.0/`
 - **Release**: `RabbitClient/bin/Release/netstandard2.0/`
 
-推送到 `master` 或向 `master` 开 Pull Request 时运行 CI（`.github/workflows/CI.yml`）。CI 读取 `Require.yml` 的 `Default.Infra-CSharp` 决定 Infra 版本。
+推送到 `master`、向 `master` 开 Pull Request，或在 Actions 里手动 **Run workflow** 时运行 CI（`.github/workflows/CI.yml`）。CI 读取 `Require.yml` 的 `Default.Infra-CSharp` 决定 Infra 版本，跳过 `RunOnlyThis`，并在有 cobertura 报告时上传到 Codecov。
 
 ## 发版
 
 在 `master` 上推送符合 `v*.*.*` 的 tag 且该提交位于 `master` 时，Release 工作流会：
 
-1. 在 `Require.yml` 中查找 `Tag` 等于该 tag 的项
+1. 在 `Require.yml` 中查找 `Tag` 等于该 tag 的项（找不到则中止）
 2. 用该项的 `Infra-CSharp` 检出依赖
-3. 构建 Debug / Release 两份 `netstandard2.0` DLL zip 并创建 GitHub Release
+3. 构建 Debug / Release 两份 `netstandard2.0` DLL zip，生成 `SHA256SUMS.txt`，并创建 GitHub Release
+
+tag 名含 `-`（如 `v1.2.1-rc.1`）时标记为 prerelease。打 tag 之后才改说明文件时，可用 ReleaseNote 工作流只更新已有 Release 正文。
 
 `Require.yml` 示例：
 
@@ -197,4 +264,4 @@ Require:
 
 ## 许可证
 
-本项目遵循 [MIT](LICENSE) 许可证。
+本项目中的脚本与文档以 [MIT](LICENSE) 许可证发布。
