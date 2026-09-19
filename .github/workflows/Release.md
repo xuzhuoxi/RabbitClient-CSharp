@@ -42,7 +42,7 @@ GitHub 无法在 `on.push` 里把 `branches` 和 `tags` 组合成「只在 maste
 - **Settings → Actions → General → Workflow permissions** 允许 workflow 申请写权限（文件内已声明 `contents: write`）。
 - 没有规则集禁止创建 `v*` tag。
 - `Require.yml` 的 `Require` 数组中必须有一项 `Tag` 等于本次发版 tag，且该项有 `Infra-CSharp` 字段。
-- 本仓库为公开（否则默认 `GITHUB_TOKEN` 无法拉 Infra）。`xuzhuoxi/Infra-CSharp` 可公开检出。
+- 本仓库与 `xuzhuoxi/Infra-CSharp` 均为公开仓库。
 
 ## 4. 人工操作流程
 
@@ -143,7 +143,7 @@ tag 名中含 `-` 时（如 `v1.0.3-rc.1`），创建的 GitHub Release 会标�
 | 推了 tag 但没有出现 Release 工作流 | tag 不符合 `v*.*.*`；或 Actions 未启用 |
 | Ensure tag is on master 失败 | tag 打在非 `master` 提交上；远程 `master` 尚未包含该提交 |
 | Resolve Infra-CSharp ref 失败 | `Require.yml` 缺少当前 tag 的项，或该项没有 `Infra-CSharp` 字段，或该字段不是分支名 / `v*.*.*` / 短哈希，或 Infra 上没有该分支 |
-| checkout Infra-CSharp 报 `Repository not found` | 本仓库仍为私有；或 `INFRA_REPO` 写错 |
+| checkout Infra-CSharp 报 `Repository not found` | `INFRA_REPO` 写错；或本仓库被改回私有 |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 创建 Release 权限错误 | 仓库/组织限制了 `GITHUB_TOKEN` 写权限 |
 | Release 正文没有手写说明 | 缺少 `notes/release/ReleaseNotes_<tag>.md`，或文件名与 tag 不一致，或该文件不在被 tag 的提交中 |

@@ -148,23 +148,14 @@ You can also use `RabbitHomeClient` alone, then construct `RabbitSocketServer` /
 
 ## API docs
 
-### Chinese
-
-- **[Overview](RabbitClient-API/cn/README.md)**
-- **[Home](RabbitClient-API/cn/JLGames.RabbitClient.Home.md)**
-- **[Server](RabbitClient-API/cn/JLGames.RabbitClient.Server.md)**
-- **[Message](RabbitClient-API/cn/JLGames.RabbitClient.Server.Message.md)**
-- **[MMO](RabbitClient-API/cn/JLGames.RabbitClient.Server.MMO.md)**
-- **[RabbitClient](RabbitClient-API/cn/JLGames.RabbitClient.md)** (manager)
-
-### English
-
-- **[Overview](RabbitClient-API/en/README.md)**
+- **[API overview](RabbitClient-API/en/README.md)**
 - **[Home](RabbitClient-API/en/JLGames.RabbitClient.Home.md)**
 - **[Server](RabbitClient-API/en/JLGames.RabbitClient.Server.md)**
 - **[Message](RabbitClient-API/en/JLGames.RabbitClient.Server.Message.md)**
 - **[MMO](RabbitClient-API/en/JLGames.RabbitClient.Server.MMO.md)**
-- **[RabbitClient](RabbitClient-API/en/JLGames.RabbitClient.md)**
+- **[RabbitClient](RabbitClient-API/en/JLGames.RabbitClient.md)** (manager)
+
+Chinese API docs: [README.md](README.md).
 
 CI is documented in [CI.md](.github/workflows/CI.md). Release tagging is documented in [Release.md](.github/workflows/Release.md). Updating notes on an existing release is documented in [ReleaseNote.md](.github/workflows/ReleaseNote.md). Per-tag notes live at `notes/release/ReleaseNotes_<tag>.md`. Root `CHANGELOG.md` is historical and no longer appended.
 

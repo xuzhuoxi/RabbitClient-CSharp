@@ -14,7 +14,7 @@
 4. 运行单元测试（跳过依赖本机服务的用例）并收集覆盖率
 5. 若有 cobertura 报告，上传到 Codecov
 
-不创建 GitHub Release，不打包 DLL zip。本仓库与 Infra 均按公开仓库处理：`actions/checkout` 用默认 `GITHUB_TOKEN` 检出旁路依赖。本仓库若仍为私有，拉 Infra 会 404，需先把本仓库设为公开。
+不创建 GitHub Release，不打包 DLL zip。本仓库与 [Infra-CSharp](https://github.com/xuzhuoxi/Infra-CSharp) 均为公开仓库，`actions/checkout` 用默认 `GITHUB_TOKEN` 检出旁路依赖。
 
 可调整常量在 `CI.yml` 顶部的 `env`：`INFRA_REPO`（旁路依赖仓库，默认 `xuzhuoxi/Infra-CSharp`）。
 
@@ -47,7 +47,7 @@ GitHub 使用的是**触发那次提交**上的 `CI.yml` 与 `Require.yml`。改
 
 - 仓库已启用 Actions。
 - 根目录存在有效的 `Require.yml`，且含 `Default.Infra-CSharp`（见第 4 节）。
-- 本仓库为公开（否则默认 `GITHUB_TOKEN` 无法拉 Infra）。`xuzhuoxi/Infra-CSharp` 可公开检出；若 `Default` 指向分支、tag 或短哈希，该 ref 必须在 Infra 仓库中存在。
+- 本仓库与 `xuzhuoxi/Infra-CSharp` 均为公开仓库；若 `Default` 指向分支、tag 或短哈希，该 ref 必须在 Infra 仓库中存在。
 - 测试项目依赖均为公开 NuGet 包，不需要额外 private token。
 
 ## 4. Infra 版本（`Require.yml` 的 `Default`）
@@ -111,7 +111,7 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj
 2. **CI 与 Release 用的 Infra 可以不同。** CI 看 `Default`；Release 看 `Require` 数组里与发版 tag 对应的项。发版前请确认 `Require` 中该项已写好。
 3. **短哈希过短或 Infra 侧没有该提交**，`actions/checkout` 会失败。建议至少 7 位，且该提交对公开仓库可见。
 4. **覆盖率不是硬性门槛。** 没有 cobertura 文件时跳过上传；Codecov 出错也不使 job 失败。
-5. **本仓库需要是公开的。** 私有仓库的 `GITHUB_TOKEN` 不能拉其它仓库（含公开的 Infra），checkout 会 404。
+5. **若改回私有，拉 Infra 会 404。** 私有仓库的 `GITHUB_TOKEN` 不能访问其它仓库。
 6. **本工作流不发版。** 推 tag 请看 [Release.md](Release.md)。
 
 ## 8. 常见失败
@@ -119,7 +119,7 @@ dotnet test RabbitClient-Test/RabbitClient-Test.csproj
 | 现象 | 可能原因 |
 | --- | --- |
 | Resolve Infra-CSharp ref 失败 | 缺少 `Default` / `Default.Infra-CSharp`；值不是分支名、`v*.*.*` 或十六进制短哈希；或 Infra 上没有该分支 |
-| checkout Infra-CSharp 报 `Repository not found` | 本仓库仍为私有；或 `INFRA_REPO` 写错 |
+| checkout Infra-CSharp 报 `Repository not found` | `INFRA_REPO` 写错；或本仓库被改回私有 |
 | checkout Infra-CSharp 找不到 ref | tag 或短哈希在 Infra 上不存在 |
 | 找不到 Infra-CSharp.csproj | 旁路检出失败，或 csproj 的 `ProjectReference` 路径已改 |
 | 构建失败 | Infra 版本与当前主库 API 不兼容（可把 `Default` 换成已知可用的 tag） |

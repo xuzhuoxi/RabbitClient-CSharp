@@ -1,7 +1,3 @@
-# 为当前token授权，可访问公开仓库
-permissions:
-  contents: read
-
 # 发版流程、注意事项见同目录 Release.md
 name: Release
 
@@ -59,7 +55,6 @@ jobs:
           repository: ${{ env.INFRA_REPO }}
           ref: ${{ steps.infra_ref.outputs.ref }}
           path: Infra-CSharp
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-dotnet@v5
         with:

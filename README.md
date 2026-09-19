@@ -148,8 +148,6 @@ await manager.ConnectThroughHome("platformId", "typeName", randomAesKey: true);
 
 ## API 文档
 
-### 中文
-
 - **[API 文档总览](RabbitClient-API/cn/README.md)**
 - **[Home](RabbitClient-API/cn/JLGames.RabbitClient.Home.md)**
 - **[Server](RabbitClient-API/cn/JLGames.RabbitClient.Server.md)**
@@ -157,14 +155,7 @@ await manager.ConnectThroughHome("platformId", "typeName", randomAesKey: true);
 - **[MMO](RabbitClient-API/cn/JLGames.RabbitClient.Server.MMO.md)**
 - **[RabbitClient](RabbitClient-API/cn/JLGames.RabbitClient.md)**（管理器）
 
-### English
-
-- **[API overview](RabbitClient-API/en/README.md)**
-- **[Home](RabbitClient-API/en/JLGames.RabbitClient.Home.md)**
-- **[Server](RabbitClient-API/en/JLGames.RabbitClient.Server.md)**
-- **[Message](RabbitClient-API/en/JLGames.RabbitClient.Server.Message.md)**
-- **[MMO](RabbitClient-API/en/JLGames.RabbitClient.Server.MMO.md)**
-- **[RabbitClient](RabbitClient-API/en/JLGames.RabbitClient.md)**
+英文 API 文档见 [README_EN.md](README_EN.md)。
 
 CI 流程见 [CI 说明](.github/workflows/CI.md)。发版流程见 [Release 说明](.github/workflows/Release.md)。补写已发布说明见 [ReleaseNote 说明](.github/workflows/ReleaseNote.md)。各 tag 说明在 `notes/release/ReleaseNotes_<tag>.md`。根目录 `CHANGELOG.md` 为历史记录，不再追加。
 
