@@ -1,303 +1,249 @@
 # Namespace: JLGames.RabbitClient.Server.MMO
 
-This namespace contains interfaces and implementations related to MMO entities, variables, management, events, metadata, type constants, mathematical structures, etc.
+MMO entities, variables, manager, events, meta, and integer vectors. All public types live in this namespace (source is grouped under Entity / Event / Lang / Meta / Var).
 
-## Interfaces and Classes
+## Entity Interfaces
 
 ### IEntity
-- Description: MMO entity base interface.
-- Main Properties:
-  - `EntityType`: Entity type.
-  - `EntityId`: Entity id.
+
+Extends `IEquatable<IEntity>`.
+
+- `EntityType`: Entity type
+- `EntityId`: Entity id
 
 ### IEntityPlayer
-- Description: Player entity interface, inherits from IEntity, IEquatable<IEntityPlayer>, IEventDispatcher, IVarSupport, IPosSupport, ITowardSupport, IInputSupport, IUpdateSupport.
-- Main Properties:
-  - `PlayerId`: Player Id.
-  - `IsSelf`: Is it the current player.
-  - `NickName`: Player nick name.
-  - `TeamId`: Team Id.
-- Main Methods:
-  - `SetSelfPlayerId(string selfId)`: Set current player Id.
+
+Extends `IEntity`, `IEquatable<IEntityPlayer>`, `IEventDispatcher`, `IVarSupport`, `IPosSupport`, `ITowardSupport`, `IInputSupport`, `IUpdateSupport`.
+
+- `PlayerId`, `IsSelf`, `NickName`, `TeamId`
+- `SetSelfPlayerId(string selfId)`
 
 ### IEntityRoom
-- Description: Room entity interface, inherits from IEntity, IEquatable<IEntityRoom>, IEventDispatcher, IUpdateSupport, IVarSupport.
-- Main Properties:
-  - `RoomId`: Room Id.
-  - `RoomName`: Room name.
-  - `PlayerCount`: Player count.
-  - `UnitCount`: Unit count.
-- Main Methods:
-  - `FindIPlayer(string playerId)`: Find player information.
-  - `FindIUnit(string unitId)`: Find unit information.
-  - `ForEachPlayer(Action<int, IEntityPlayer> each)`: Iterate through each player.
-  - `ForEachUnit(Action<int, IEntityUnit> each)`: Iterate through each unit.
+
+Extends `IEntity`, `IEquatable<IEntityRoom>`, `IEventDispatcher`, `IUpdateSupport`, `IVarSupport`.
+
+- `RoomId`, `RoomName`, `PlayerCount`, `UnitCount`
+- `FindIPlayer(string playerId)` / `FindIUnit(string unitId)`
+- `ForEachPlayer(Action<int, IEntityPlayer> each)` / `ForEachUnit(Action<int, IEntityUnit> each)`
 
 ### IEntityUnit
-- Description: Unit entity interface, inherits from IEntity, IEquatable<IEntityUnit>, IEventDispatcher, IVarSupport, IPosSupport, ITowardSupport, IInputSupport, IUpdateSupport.
-- Main Properties:
-  - `UnitId`: Unit Id.
-  - `Owner`: Owner.
-  - `RoomId`: Room Id where it belongs.
+
+Extends `IEntity`, `IEquatable<IEntityUnit>`, `IEventDispatcher`, `IVarSupport`, `IPosSupport`, `ITowardSupport`, `IInputSupport`, `IUpdateSupport`.
+
+- `UnitId`, `Owner`, `RoomId`
+
+### Capability Interfaces
+
+**IVarSupport**
+
+- `VarSet`
+- `SetVar(string key, object value)` / `SetVars(IVarSet vars)`
+- `DelVar(string key)` / `DelVars(string[] keys)`
+
+**IPosSupport**
+
+- `PosInt`
+- `SetPosInt(V3Int xyz)` / `SetPosInt(int x, int y, int z)`
+
+**ITowardSupport**
+
+- `Toward`
+- `SetTowardAngleInt(int towardAngleInt)` / `SetTowardAngleInt(short towardAngleInt)`
+
+**IInputSupport**
+
+- `InputMoveOn`, `InputTargetOn`, `InputMoveInt`, `InputTargetInt`
+- `SetInputMoveInt(V3Int)` / `SetInputMoveInt(int x, int y, int z)`
+- `SetInputTargetInt(V3Int)` / `SetInputTargetInt(int x, int y, int z)`
+
+**IUpdateSupport**
+
+- `UpdateFromReader(IRabbitResponseMsg reader)`
+
+## Entity Implementations
+
+### EntityPlayer
+
+Implements `IEntityPlayer`, extends `EventDispatcher`.
+
+- Constructor: `EntityPlayer(string playerId)`
+- Static: `GenPlayerFromReader(IRabbitResponseMsg reader)`, `NewPlayer()`, `NewIPlayer()`
+
+### EntityRoom
+
+Implements `IEntityRoom`, extends `EventDispatcher`.
+
+- Constructor: `EntityRoom(string roomId)`
+- `SetRoomId(string roomId)`
+- `FindPlayer` / `RemovePlayer` / `AddPlayer` / `AddPlayers(int addCount)`
+- `FindUnit` / `RemoveUnit` / `AddUnit` / `AddUnits(int addCount)`
+- Static: `GenRoomFromReader(IRabbitResponseMsg reader)`, `NewRoom()`, `NewIRoom()`
+
+### EntityUnit
+
+Implements `IEntityUnit`, extends `EventDispatcher`.
+
+- Constructor: `EntityUnit(string unitId)`
+- Static: `GenUnitFromReader(IRabbitResponseMsg reader)`, `NewUnit()`, `NewIUnit()`
+
+## Variables
 
 ### IVarSet
-- Description: Variable collection interface, inherits from INetMessage.
-- Main Properties:
-  - `Size`: All var size.
-  - `KeySize`: Key var size.
-- Main Methods:
-  - `KeyToStampKey(string key)`: Variable key to variable timestamp key.
-  - `Clear()`: Clear variable collection.
-  - `SetVar(string key, object value)`: Set variable value.
-  - `SetVar(string key, object value, long timestamp)`: Set variable value (with timestamp).
-  - `DeleteVar(string key, bool includeStampKey)`: Delete variable value and return it.
-  - `SetVars(Dictionary<string, object> vars)`: Batch set variable values.
-  - `SetVars(Dictionary<string, object> vars, long timestamp)`: Batch set variable values (with timestamp).
-  - `SetVars(IVarSet set)`: Batch set variable values (from another IVarSet).
-  - `SetVars(IVarSet set, long timestamp)`: Batch set variable values (with timestamp).
-  - `DeleteVars(string[] keys, bool includeStampKey)`: Batch delete variables.
-  - `CheckKey(string key)`: Check if key is included.
-  - `GetValue(string key)`: Get value.
-  - `GetValue<T>(string key)`: Get generic value.
-  - `GetValueStamp(string key)`: Get timestamp when value was set.
-  - `ForEach(VarSetDelegates.FuncEach each)`: Iterate through variables.
-  - `ForEach(VarSetDelegates.FuncStampEach stampEach)`: Iterate through variables (with timestamp).
 
-### IVarSupport
-- Description: Variable support interface.
-- Main Properties:
-  - `VarSet`: Variable collection.
-- Main Methods:
-  - `SetVar(string key, object value)`: Set local property.
-  - `SetVars(IVarSet vars)`: Batch set local properties.
-  - `DelVar(string key)`: Delete local property.
-  - `DelVars(string[] keys)`: Batch delete local properties.
+Extends `INetMessage`.
 
-### IPosSupport
-- Description: Position support interface.
-- Main Properties:
-  - `PosInt`: Position.
-- Main Methods:
-  - `SetPosInt(V3Int xyz)`: Set coordinates.
-  - `SetPosInt(int x, int y, int z)`: Set coordinates.
+- `Size`: All entries including timestamp keys
+- `KeySize`: Business key count
+- `KeyToStampKey(string key)`
+- `Clear()`
+- `SetVar(string key, object value)` / `SetVar(string key, object value, long timestamp)`
+- `DeleteVar(string key, bool includeStampKey)`
+- `SetVars(Dictionary<string, object> vars)` plus timestamp / `IVarSet` overloads
+- `DeleteVars(string[] keys, bool includeStampKey)`
+- `CheckKey(string key)`, `GetValue(string key)`, `GetValue<T>(string key)`, `GetValueStamp(string key)`
+- `ForEach(VarSetDelegates.FuncEach)` / `ForEach(VarSetDelegates.FuncStampEach)`
 
-### ITowardSupport
-- Description: Direction support interface.
-- Main Properties:
-  - `Toward`: Direction.
-- Main Methods:
-  - `SetTowardAngleInt(int towardAngleInt)`: Set target direction.
-  - `SetTowardAngleInt(short towardAngleInt)`: Set target direction.
-
-### IInputSupport
-- Description: Input support interface.
-- Main Properties:
-  - `InputMoveOn`: Has input state.
-  - `InputTargetOn`: Has target.
-  - `InputMoveInt`: Control.
-  - `InputTargetInt`: Target position.
-- Main Methods:
-  - `SetInputMoveInt(V3Int input)`: Set input state.
-  - `SetInputMoveInt(int x, int y, int z)`: Set input state.
-  - `SetInputTargetInt(V3Int input)`: Set target position.
-  - `SetInputTargetInt(int x, int y, int z)`: Set target position.
-
-### IUpdateSupport
-- Description: Update support interface.
-- Main Methods:
-  - `UpdateFromReader(IRabbitResponseMsg reader)`: Update data from an IRabbitResponseMsg object.
-
-### MmoManager
-- Description: MMO manager, inherits from EventDispatcher.
-- Main Methods:
-  - `StartManager(IEventDispatcher dispatcher)`: Start manager.
-  - `StopManager()`: Stop manager.
+Supported value types: primitives and their arrays, plus `V2Int` / `V3Int`.
 
 ### VarSet
-- Description: Variable collection implementation, supports storage, batch operations, serialization of various types of variables.
-- Main Methods:
-  - See IVarSet interface definition for details.
-  - `EncodeToBytes()`: Encode to byte array.
-  - `DecodeFromBytes(byte[] bytes)`: Decode from byte array.
-  - `EncodeToBuff(IDataBufferWriter buff)`: Encode to buffer.
-  - `DecodeFromBuff(IDataBufferReader buff)`: Decode from buffer.
 
-### EntityType (Enum)
-- Description: Entity type.
-- Enum Values:
-  - `EntityUnit`: Unit entity.
-  - `EntityPlayer`: Player entity.
-  - `EntityRoom`: Room entity.
-  - `EntityTeam`: Team entity.
-  - `EntityTeamCorps`: Team corps entity.
-  - `EntityChannel`: Channel entity.
-- Related Static Tools:
-  - `EntityTypeUtil.EntityNone`: No type.
-  - `EntityTypeUtil.EntityAll`: All types.
-  - `EntityTypeUtil.Match(EntityType self, EntityType check)`: Check if self is a part of check.
-  - `EntityTypeUtil.Include(EntityType self, EntityType check)`: Check if self contains check.
+Implements `IVarSet`.
 
----
+- Constructor: `VarSet(bool littleEndian)`
+- Also: `EncodeToBytes()` / `DecodeFromBytes(byte[])`, `EncodeToBuff` / `DecodeFromBuff`
 
-## Events and Event Data Structures
+### VarData&lt;T&gt;
+
+Typed variable entry with timestamp: `Key`, `Type` (`VarType`), `Value` (assigning updates `Stamp`), `Stamp`.
+
+### VarSetDelegates
+
+- `FuncEach(string key, object value)`
+- `FuncStampEach(string key, object value, long stamp)`
+
+## MmoManager
+
+Extends `EventDispatcher`. Binds an external dispatcher for room state.
+
+- `StartManager(IEventDispatcher dispatcher)`
+- `StopManager()`
+
+## Events
 
 ### PlayerEvents
-- Event Constants:
-  - `EventLeaveRoom`: Player leaves room (event data: LeaveRoomData)
-  - `EventEnterRoom`: Player enters room (event data: EnterRoomData)
-  - `NotifyPlayerVar`: Player variable change (event data: NotifyPlayerVarData)
-  - `NotifyPlayerVarDel`: Player variable deletion (event data: NotifyPlayerVarDelData)
-  - `NotifyPlayerVarPos`: Player coordinate change (event data: NotifyPlayerVarData)
-- Event Data Structures:
-  - `NotifyPlayerLeaveRoomData`: RoomId, PlayerId, IEntityPlayer
-  - `NotifyPlayerEnterRoomData`: RoomId, IEntityPlayer
-  - `NotifyPlayerVarData`: PlayerId, IVarSet
-  - `NotifyPlayerVarDelData`: PlayerId, Keys
+
+| Event | Payload |
+| --- | --- |
+| `EventLeaveRoom` | `NotifyPlayerLeaveRoomData` (`RoomId`, `PlayerId`, `Player`) |
+| `EventEnterRoom` | `NotifyPlayerEnterRoomData` (`RoomId`, `Player`) |
+| `NotifyPlayerVars` | `NotifyPlayerVarsData` (`PlayerId`, `VarSet`) |
+| `NotifyPlayerDelVars` | Player variable deletion |
+| `NotifyPlayerVarPos` | `NotifyPlayerVarsData` |
+
+Also: `NotifyPlayerDelData` (`RoomId`, `Player`).
 
 ### RoomEvents
-- Event Constants:
-  - `EventRoomEnter`: Room initialization (data: roomId)
-  - `EventRoomExit`: Room exit (data: RoomReadyData)
-  - `NotifyRoomVar`: Room variable change (data: NotifyRoomVarData)
-  - `NotifyRoomVarDel`: Room variable deletion (data: NotifyRoomVarDelData)
-- Event Data Structures:
-  - `NotifyRoomVarData`: RoomId, IVarSet
-  - `NotifyRoomVarDelData`: RoomId, Keys
-  - `RoomReadyData`: OldRoomId, NewRoomId, IEntityRoom
+
+| Event | Payload |
+| --- | --- |
+| `EventRoomEnter` | `roomId` (`string`) |
+| `EventRoomExit` | `RoomReadyData` (`OldRoomId`, `NewRoomId`, `NewRoom`) |
+| `NotifyRoomVar` | `NotifyRoomVarData` (`RoomId`, `VarSet`) |
+| `NotifyRoomVarDel` | `NotifyRoomVarDelData` (`RoomId`, `Keys`) |
 
 ### UnitEvents
-- Event Constants:
-  - `EventUnitNew`: Player creates new unit (data: EventUnitNewData)
-  - `NotifyUnitVar`: Unit variable change (data: NotifyUnitVarData)
-  - `NotifyUnitVarDel`: Unit variable deletion (data: NotifyUnitVarDelData)
-  - `NotifyUnitVarPos`: Unit coordinate change (data: NotifyUnitVarData)
-  - `NotifyUnitNew`: New unit birth (data: NotifyNewUnitData)
-  - `NotifyUnitDel`: Unit deleted (data: NotifyDelUnitData)
-- Event Data Structures:
-  - `EventUnitNewData`: RsCode, IEntityUnit[]
-  - `NotifyUnitNewData`: RoomId, PlayerId, IEntityUnit
-  - `NotifyUnitVarData`: UnitId, IVarSet
-  - `NotifyUnitVarDelData`: UnitId, Keys
-  - `NotifyUnitDelData`: RoomId, IEntityUnit
+
+| Event | Payload |
+| --- | --- |
+| `EventUnitNew` | `EventUnitNewData` (`RsCode`, `Units`) |
+| `NotifyUnitVars` | `NotifyUnitVarsData` (`UnitId`, `VarSet`) |
+| `NotifyUnitDelVars` | Unit variable deletion |
+| `NotifyUnitVarPos` | `NotifyUnitVarsData` |
+| `NotifyUnitNew` | `NotifyUnitNewData` (`RoomId`, `PlayerId`, `Unit`) |
+| `NotifyUnitDel` | `NotifyUnitDelData` (`RoomId`, `Unit`) |
 
 ### WorldEvents
-- Event Constants:
-  - `EventWorldInit`: World initialization (data: roomId)
 
----
+- `EventWorldInit`: payload is `roomId` (`string`)
 
-## Metadata and Constants
+## Meta and Constants
 
 ### ProtoMMOCode
-- MMO related error code constants:
-  - `MMORoomExist`: Room does not exist
-  - `MMORoomNotExist`: Room already exists
-  - `MMORoomCapLimit`: Room capacity limit
-  - `MMOTeamCorpsExist`: Team does not exist
-  - `MMOTeamCorpsNotExist`: Team already exists
-  - `MMOTeamCorpsCapLimit`: Team capacity limit
-  - `MMOTeamExist`: Squad does not exist
-  - `MMOTeamNotExist`: Squad already exists
-  - `MMOTeamCapLimit`: Squad capacity limit
-  - `MMOChanExist`: Channel does not exist
-  - `MMOChanNotExist`: Channel already exists
-  - `MMOChanCapLimit`: Channel capacity limit
-  - `MMOPlayerExist`: User already exists
-  - `MMOPlayerNotExist`: User does not exist
-  - `MMOPlayerInRoom`: User is already in room
-  - `MMOUnitExist`: Unit already exists
-  - `MMOUnitNotExist`: Unit does not exist
-  - `MMOIndexType`: Index type mismatch
-  - `MMOOther`: Other errors
+
+MMO protocol result codes (constant names and semantics follow the source XML comments):
+
+- `MMORoomExist` (-101, room does not exist), `MMORoomNotExist` (-102, room already exists), `MMORoomCapLimit` (-103)
+- `MMOTeamCorpsExist` (-104), `MMOTeamCorpsNotExist` (-105), `MMOTeamCorpsCapLimit` (-106)
+- `MMOTeamExist` (-107), `MMOTeamNotExist` (-108), `MMOTeamCapLimit` (-109)
+- `MMOChanExist` (-110), `MMOChanNotExist` (-111), `MMOChanCapLimit` (-112)
+- `MMOPlayerExist` (-113), `MMOPlayerNotExist` (-114), `MMOPlayerInRoom` (-115)
+- `MMOUnitExist` (-116), `MMOUnitNotExist` (-117)
+- `MMOIndexType` (-200), `MMOOther` (-201)
 
 ### PlayerVarKeys
-- Player variable Key constants:
-  - `Pos`: int32 array, coordinates X, Y, Z
-  - `Toward`: Direction, int16
-  - `InputMove`: int32 array, input X, Y, Z
-  - `InputTarget`: int32 array, target X, Y, Z
-  - `InputJump`: Input state Jump (bool)
-  - `ActionState`: Action state (uint32)
-  - `Hp`: Durability (uint32)
-  - `Buff`: Buff (uint32)
-  - `Nick`: Nickname (string)
-  - `Team`: Squad id (string)
-  - `TeamCorps`: Corps Id (string)
+
+`Pos`, `Toward`, `InputMove`, `InputTarget`, `InputJump`, `ActionState`, `Hp`, `Buff`, `Nick`, `Team`, `TeamCorps`
 
 ### RoomVarKeys
-- Room variable Key constants:
-  - `Name`: Room name (string)
+
+- `Name`: room name (string)
 
 ### UnitVarKeys
-- Unit variable Key constants:
-  - `Owner`: Owner
-  - `Room`: All room Id
-  - `Pos`: int32 array, coordinates X, Y, Z
-  - `Toward`: Direction, int16
-  - `InputMove`: int32 array, input X, Y, Z
-  - `InputTarget`: int32 array, target X, Y, Z
-  - `InputJump`: Input state Jump (bool)
-  - `ActionState`: Action state (uint32)
+
+`Owner`, `Room`, `Pos`, `Toward`, `InputMove`, `InputTarget`, `InputJump`, `ActionState`
 
 ### MmoMetas
-- Static class providing metadata (MetaData: Key, Type, Default) for room, player, and unit variables, supports registration and query.
-  - `GetRoomVarMeta(string key)`: Get room variable metadata
-  - `GetPlayerVarMeta(string key)`: Get player variable metadata
-  - `GetUnitVarMeta(string key)`: Get unit variable metadata
-  - `RegisterRoomVarMeta(MetaData metaData)`: Register room variable metadata
-  - `RegisterPlayerVarMeta(MetaData metaData)`: Register player variable metadata
-  - `RegisterUnitVarMeta(MetaData metaData)`: Register unit variable metadata
-- Internal Class:
-  - `MetaData`:
-    - `Key`: Variable name
-    - `Type`: Variable type (VarType)
-    - `Default`: Default value
 
----
+- `GetRoomVarMeta` / `GetPlayerVarMeta` / `GetUnitVarMeta`
+- `RegisterRoomVarMeta` / `RegisterPlayerVarMeta` / `RegisterUnitVarMeta`
+- `MetaData`: `Key`, `Type`, `Default`
 
-## Enumerations and Types
+## Enums
+
+### EntityType (Flags)
+
+`EntityUnit`, `EntityPlayer`, `EntityRoom`, `EntityTeam`, `EntityTeamCorps`, `EntityChannel`
+
+**EntityTypeUtil**
+
+- `EntityNone`, `EntityAll`
+- `Match(this EntityType self, EntityType check)`: any overlapping bit
+- `Include(this EntityType self, EntityType check)`: all bits of `check` are set
 
 ### VarType
-- Variable type enumeration:
-  - `Undefined`: Undefined
-  - `Moment`: Moment
-  - `Forever`: Permanent until overwritten
-  - `Duration`: Lasts for a period of time
+
+`Undefined`, `Moment`, `Forever`, `Duration`
 
 ### CampType
-- Camp type enumeration:
-  - `None`: No camp
-  - `Watch`: Spectator
-  - `Neutral`: Neutral
-  - `Camp1`~`Camp8`: Camp 1~8
+
+`None`, `Watch`, `Neutral`, `Camp1`–`Camp8`
 
 ### RoomType
-- Room type enumeration:
-  - `None`: Undefined
-  - `Normal`: Normal
-  - `Temp`: Temporary
+
+`None`, `Normal`, `Temp`
 
 ### UnitType
-- Unit type enumeration:
-  - `None`: Undefined
-  - `Building`: Building
-  - `Troop`: Troop
-  - `Banner`: Banner
 
----
+`None`, `Building`, `Troop`, `Banner`
 
-## Mathematical Structures
+## Math Structures
 
 ### V2Int
-- Two-dimensional integer vector structure, supports indexing, construction, Set, ToString, Equals and other common operations.
-  - Fields: `x`, `y`
-  - Indexer: `this[int index]`
-  - Constructor: `V2Int(int x, int y)`
-  - Methods: `Set(int newX, int newY)`, `GetHashCode()`, `Equals`, `ToString()`
+
+Two-dimensional integer vector. Implements `IEquatable<V2Int>`, `IFormattable`.
+
+- Components: `x`, `y`; indexer `this[int index]`
+- Constructor: `V2Int(int x, int y)`; `Set(int newX, int newY)`
+- Static: `MagnitudeLevel` / `MagnitudeValue`; `zero`, `one`, `up`, `down`, `left`, `right`
+- `Min` / `Max` / `Lerp` / `LerpUnclamped`
+- Operators: `+`, `-`, unary `-`, `*`, `/`, `==`, `!=`
 
 ### V3Int
-- Three-dimensional integer vector structure, supports indexing, construction, Set, ToString, Equals and other common operations.
-  - Fields: `x`, `y`, `z`
-  - Indexer: `this[int index]`
-  - Constructors: `V3Int(int x, int y, int z)`, `V3Int(int x, int y)`
-  - Methods: `Set(int newX, int newY, int newZ)`, `GetHashCode()`, `Equals`, `ToString()`
+
+Three-dimensional integer vector. Implements `IEquatable<V3Int>`, `IFormattable`.
+
+- Components: `x`, `y`, `z`; indexer `this[int index]`
+- Constructors: `V3Int(int x, int y, int z)`, `V3Int(int x, int y)`; `Set(int newX, int newY, int newZ)`
+- Static: `MagnitudeLevel` / `MagnitudeValue`; `zero`, `one`, `forward`, `back`, `up`, `down`, `left`, `right`
+- `Min` / `Max` / `Lerp` / `LerpUnclamped`
+- Operators: `+`, `-`, unary `-`, `*`, `/`, `==`, `!=`

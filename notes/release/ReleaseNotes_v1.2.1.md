@@ -1,6 +1,6 @@
 ## Release Notes
 
-+ 首个面向发行说明的版本：提供经 Rabbit-Home 发现并连接 Rabbit-Server 的 .NET Standard 2.0 客户端库（Home、Socket 收发、消息协议、MMO），并配套加密通信、线程上下文、CI / Release 工作流与中英 API 文档。
++ 首个面向发行说明的版本：提供经 Rabbit-Home 发现并连接 Rabbit-Server 的 .NET Standard 2.0 客户端库（Home、Socket 收发、消息协议、MMO），并配套加密通信、线程上下文、CI / Release 工作流、Require.yml 依赖映射与中英文档。
 
 ### Known Issues
 
@@ -23,6 +23,9 @@
 + 更新 `EventOnConnectFinish` 事件说明。
 + 子项目与仓库更名为 `RabbitClient` / `RabbitClient-CSharp`。
 + 增加 generate-note skill；为包含监听服务的单元测试添加 `RunOnlyThis`，以便 CI 跳过。
++ 完善中英文 README：连接流程、事件表、覆盖率、发版产物与许可证说明。
++ 新增 CI 说明（`CI.md`），并更新 Release 说明。
++ `resolve-infra-ref.py` 支持 `--default`，并按分支名 / `v*.*.*` / 提交短哈希解析 Infra 版本。
 
 ### Breaking Changes
 
@@ -43,6 +46,10 @@
 
 + Infra-CSharp 依赖由 DLL `HintPath` 改为旁路目录的 `ProjectReference`。
 + 新增 `Require.yml`，CI / Release 按其中 `Tag` → `Infra-CSharp` 映射检出依赖，不再固定 `master` 或同名 tag。
++ `Require.yml` 增加 `Default.Infra-CSharp` 供 CI 使用；Release 仍按 `Require` 数组中本仓库 tag 对应项检出，找不到则中止、不回退到 `Default`。
++ Infra-CSharp 取值规范统一为：分支名（该分支最新提交）、`v*.*.*` tag、或 git 提交短哈希。
++ CI 手动运行不再输入 tag，只读所选分支上的 `Default`。
++ 检出 Infra-CSharp 时按公开仓库处理。
 
 ### Notable Fixes
 
@@ -77,6 +84,17 @@
 + 补全 Server、Message、MMO、`RabbitClientManager` 注释 (`b1efec4`)
 + 增加 generate-note skill、CI / Release / ReleaseNote 工作流，测试添加 `RunOnlyThis` (`b7ed72e`)
 + 增加 `Require.yml`，CI / Release 按映射检出 Infra-CSharp (`d76d738`)
++ 更新 v1.2.1 发行说明 (`e536bfb`)
++ 更新 README (`5ba30e6`)
++ 优化 CI 工作流，增加 Require.yml 依赖版本的配置与解释 (`5f9aeb5`)
++ 更新拉取依赖仓库时的行为，统一按公开仓库的方式进行拉取 (`46599b0`)
++ 更新拉取依赖仓库时的行为，统一按公开仓库的方式进行拉取 (`a7e49f2`)
++ 更新 Require.yml 中关于 Infra-CSharp 值的规范 (`2de5fca`)
++ 拉取 Infra-CSharp 时显式声明 token 为空字符串 (`28a245b`)
++ 为当前仓库的 token 授权，可访问公开仓库 (`7a2efad`)
++ 使用临时 token 拉取依赖 (`a83b23b`)
++ 更新 CI 和 Release 工作流及说明 (`7dd5f88`)
++ 更新 README (`3cbeaa8`)
 
 ### New Contributors
 

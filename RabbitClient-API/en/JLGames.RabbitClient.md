@@ -1,27 +1,52 @@
 # Namespace: JLGames.RabbitClient
 
-This namespace serves as the unified management entry point for Rabbit-Client-CSharp, responsible for coordinating connections and communication between Rabbit-Home and Rabbit-Server.
+Unified entry for RabbitClient-CSharp. Coordinates Rabbit-Home queries and Rabbit-Server connections. `RabbitClientManager` extends `EventDispatcher` and implements `IDisposable`.
 
-## Classes and Events
+## RabbitClientManager
 
-### RabbitClientManager
-- Description: Unified client manager for Rabbit-Home queries and Rabbit-Server connections.
-- Main Properties:
-  - `HomeSettings`: Rabbit-Home configuration information.
-  - `QueryInfo`: Current query information.
-  - `HomeClient`: Rabbit-Home client.
-  - `SocketServer`: Rabbit-Server communication server.
-  - `SocketClient`: Rabbit-Server communication client.
-- Main Methods:
-  - `ConnectThroughHome(string platformId, string typeName, byte[] tempAesKey)`: Query and connect to server through Rabbit-Home.
-  - `ConnectThroughHome(string platformId, string typeName, bool randomAesKey, string passphrase = "Rabbit-Client")`: Query and connect to server through Rabbit-Home with random key support.
-  - `ConnectThroughHome(QueryRouteInfo queryInfo)`: Connect using custom query information.
+Orchestrates home route query, socket connection, AES session encryption, and event dispatch.
 
-### RabbitClientManagerEvents
-- Description: RabbitClientManager related event constants.
-- Main Events:
-  - `EventOnProgressHome`: Connection progress event (Rabbit-Home query phase).
-  - `EventOnProgressServer`: Connection progress event (Rabbit-Server connection phase).
-  - `EventOnConnectFinish`: Connection completion event.
-- Event Data Types:
-  - `ProgressEventData<T>`: Progress event data, containing `Suc` (whether successful) and `Data` (related data).
+### Properties
+
+- `HomeSettings`: Rabbit-Home connection and crypto settings.
+- `HomeHttpProxy`: `IHttpClientProxy` used for Home HTTP requests.
+- `HomeClient`: `RabbitHomeClient` instance.
+- `QueryInfo`: Last `QueryRouteInfo` submitted to Home.
+- `SocketServer`: Low-level `RabbitSocketServer`.
+- `SocketClient`: High-level `RabbitSocketClient` (encryption and event dispatch).
+
+### Constructors
+
+- `RabbitClientManager(IHttpClientProxy homeHttpProxy, string homeUrl, bool usePost, bool enableKey, bool isPemKey, string pubKeyPath, string pubKeyContent)`: Create from URL and key options. Provide either `pubKeyPath` or `pubKeyContent`.
+- `RabbitClientManager(IHttpClientProxy homeHttpProxy, HomeSettings homeSettings)`: Create from an existing `HomeSettings`.
+
+### Methods
+
+- `SetThreadSocketContext(SynchronizationContext context)`: Dispatch socket callbacks onto the given synchronization context.
+- `ConnectThroughHome(string platformId, string typeName, byte[] tempAesKey)`: Query and connect using platform, type, and a temporary AES key.
+- `ConnectThroughHome(string platformId, string typeName, bool randomAesKey, string passphrase = "RabbitClient")`: When `randomAesKey` is true, derive a 32-byte temporary AES key via PBKDF2 (default passphrase `RabbitClient`).
+- `ConnectThroughHome(QueryRouteInfo queryInfo)`: Connect with full query parameters.
+- `Dispose()`: Release socket, home client, and dispatcher resources.
+
+After a successful connect, if `OpenSk` is present, the manager sets an AES cipher on `SocketClient` and calls `StartReceiving()`.
+
+## RabbitClientManagerEvents
+
+Event names and payload types for the connection flow.
+
+### Events
+
+| Event | Payload |
+| --- | --- |
+| `EventOnProgressHome` | `ProgressEventData<QueryResult>` |
+| `EventOnProgressServer` | `ProgressEventData<SocketEvents.SocketConnEventInfo>` |
+| `EventOnConnectFinish` | `bool` (whether the connection succeeded) |
+
+### ProgressEventData&lt;T&gt;
+
+Generic progress payload.
+
+- `Suc`: Whether this step succeeded.
+- `Data`: Step result when available.
+- `Error`: Exception when the step failed with an error.
+- `ToString()`: Diagnostic string.

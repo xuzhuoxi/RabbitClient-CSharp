@@ -1,109 +1,97 @@
 # Namespace: JLGames.RabbitClient.Server.Message
 
-This namespace contains interfaces and implementations related to Rabbit-Server message protocols.
+Rabbit-Server message header, read/write, and request/response protocol. Little-endian by default. `IRabbitMessageReader` also implements Infra `IDataBufferReader` / `IDataBufferCopier` / `IByteBufferReader` / `IByteBufferCopier`, so `RabbitMessageReader` exposes typed read/copy helpers for primitives and arrays.
 
-## Interfaces and Classes
+## IRabbitMessageHeader
 
-### IRabbitMessage
-- Description: Rabbit message base interface.
-- Main Properties:
-  - `Extension`: Extension Name.
-  - `ProtoId`: Proto Id.
-  - `ClientId`: Message client ID.
-  - `ProtoUid`: ProtoUID.
+Common header properties.
 
-### IRabbitMessageReader
-- Description: Rabbit message reading interface, inherits from IRabbitMessage, IDataBufferReader, IDataBufferCopier, IByteBufferReader, IByteBufferCopier.
-- Main Properties:
-  - `Next`: Is there any data left to read.
-- Main Methods:
-  - `StartReadData()`: Start to read message body data.
-  - `ReadMessageTo(INetMessage message)`: Read object data that implements INetMessage interface.
-  - `CopyMessageTo(INetMessage message)`: Read object data that implements INetMessage interface, without moving read index.
-  - `ReadDataTo(ref object data)`: Read data and save to data, matching based on data's data type.
-  - `CopyDataTo(ref object data)`: Read data and save to data, without moving read index.
-  - `CopyRemains()`: Copy remain bytes.
-  - `SetMessageBytes(byte[] msg)`: Update current object's data using byte data.
+- `Extension`: Extension name
+- `ProtoId`: Protocol id
+- `ClientId`: Client identifier
+- `ProtoUid`: Unique protocol id (`{Extension}:{ProtoId}`)
 
-### IRabbitMessageWriter
-- Description: Rabbit message writing interface, inherits from IRabbitMessage.
-- Main Methods:
-  - `WriteHeader()`: Set the message header, and write it to the buff.
-  - `WriteHeader(string extension, string protoId, string uid)`: Overload, set header information.
-  - `WriteMessage(INetMessage msg)`: Write object data that implements INetMessage interface.
-  - `WriteData(object data)`: Write data, supports INetMessage implementation objects, basic data types and their arrays.
-  - `ToMessageBytes()`: Read message byte data.
+## IRabbitMessageContent
 
-### IRabbitRequestMsg
-- Description: Rabbit request message interface, inherits from IRabbitMessageWriter.
-- Main Methods:
-  - `SetProtoInfo(string extName, string protoId)`: Set response info.
-  - `SetClientId(string cid)`: Set client id.
-  - `StartWriteData()`: Start write data.
-  - `WriteRequestBase(object baseValue)`: Write base type data.
-  - `WriteRequestMessage(INetMessage reqMsg)`: Write message data.
+Extends `IRabbitMessageHeader` with raw payload accessors.
 
-### IRabbitResponseMsg
-- Description: Rabbit response message interface, inherits from IRabbitMessageReader, ICloneable<IRabbitResponseMsg>.
-- Main Properties:
-  - `RsCode`: Response Result Code.
+- `Content`: Message bytes
+- `ContentString`: String representation of the payload
 
-### RabbitMessageWriter
-- Description: Rabbit message writing implementation class, implements IRabbitMessageWriter.
-- Main Properties:
-  - `Extension`: Extension name.
-  - `ProtoId`: Proto Id.
-  - `ClientId`: Client Id.
-  - `ProtoUid`: Proto unique Id.
-- Constructor:
-  - `RabbitMessageWriter(bool littleEndian = true)`: Initialize, supports byte order setting.
-- Main Methods:
-  - `WriteHeader()`: Write header.
-  - `WriteHeader(string extension, string protoId, string cid)`: Overload, set header information.
-  - `WriteMessage(INetMessage msg)`: Write INetMessage object.
-  - `WriteData(object data)`: Write data.
-  - `ToMessageBytes()`: Get message byte array.
+## IRabbitMessageReader
 
-### RabbitRequestMsg
-- Description: Rabbit request message implementation class, implements IRabbitRequestMsg.
-- Constructor:
-  - `RabbitRequestMsg(bool littleEndian = true)`: Initialize, supports byte order setting.
-- Main Methods:
-  - `SetClientId(string cid)`: Set client Id.
-  - `SetProtoInfo(string extName, string protoId)`: Set protocol information.
-  - `StartWriteData()`: Start write data.
-  - `WriteRequestBase(object baseValue)`: Write basic type data.
-  - `WriteRequestMessage(INetMessage reqMsg)`: Write message data.
+Extends `IRabbitMessageHeader` and the Buffer interfaces above.
 
-### RabbitMessageReader
-- Description: Rabbit message reading implementation class, implements IRabbitMessageReader.
-- Main Properties:
-  - `Extension`, `ProtoId`, `ClientId`, `ProtoUid`: Same as interface definition.
-  - `Next`: Is there any data left to read.
-- Constructor:
-  - `RabbitMessageReader(bool littleEndian = true)`: Initialize, supports byte order setting.
-- Main Methods:
-  - `StartReadData()`: Start read data.
-  - `ReadMessageTo(INetMessage message)`, `CopyMessageTo(INetMessage message)`, `ReadDataTo(ref object data)`, `CopyDataTo(ref object data)`, `CopyRemains()`, `SetMessageBytes(byte[] msg)`, etc., see interface definition for details.
-  - Also includes various basic type and array reading, copying methods.
+- `Next`: Whether unread data remains
+- `StartReadData()`: Reset the read position and read the header
+- `ReadMessageTo(INetMessage message)` / `CopyMessageTo(INetMessage message)`: Read/copy an `INetMessage` (copy does not advance the index)
+- `ReadDataTo(ref object data)` / `CopyDataTo(ref object data)`: Match primitives, arrays, or `INetMessage` by the runtime type of `data`
+- `CopyRemains()`: Copy remaining bytes
+- `SetMessageBytes(byte[] msg)`: Replace the buffer with raw bytes
 
-### RabbitResponseMsg
-- Description: Rabbit response message implementation class, implements IRabbitResponseMsg.
-- Main Properties:
-  - `RsCode`: Response structure status code.
-- Constructor:
-  - `RabbitResponseMsg(bool littleEndian = true)`: Initialize, supports byte order setting.
-- Main Methods:
-  - `StartReadData()`: Overload, read and parse RsCode.
-  - `SetMessageBytes(byte[] msg)`: Overload, set original message bytes.
-  - `Clone()`: Clone current response message object.
+## IRabbitMessageWriter
 
-### RabbitHeader (internal)
-- Description: Rabbit message header structure.
-- Fields:
-  - `Extension`: Extension name.
-  - `ProtoId`: Proto Id.
-  - `ClientId`: Client Id.
-  - `ProtoUid`: Proto unique Id (`{Extension}:{ProtoId}`).
-- Methods:
-  - `SetHeaderInfo(string extension, string protoId, string cid)`: Set header information.
+Extends `IRabbitMessageHeader`.
+
+- `WriteHeader()`: Write the current header fields to the buffer
+- `WriteHeader(string extension, string protoId, string uid)`: Set header fields and write (`uid` is the client id)
+- `WriteMessage(INetMessage msg)`: Write an `INetMessage`
+- `WriteData(object data)`: Write primitives and arrays, or an `INetMessage`
+- `ToMessageBytes()`: Fully encoded message bytes
+
+## IRabbitRequestMsg
+
+Extends `IRabbitMessageWriter`.
+
+- `SetProtoInfo(string extName, string protoId)`
+- `SetClientId(string cid)`
+- `StartWriteData()`: Write the header to start the request body
+- `WriteRequestBase(object baseValue)`: Write a primitive (ignored if null)
+- `WriteRequestMessage(INetMessage reqMsg)`: Write a message (ignored if null)
+
+## IRabbitResponseMsg
+
+Extends `IRabbitMessageReader` and `ICloneable<IRabbitResponseMsg>`.
+
+- `RsCode`: Response status code
+
+## RabbitMessageHeader
+
+Public struct (not internal).
+
+- Fields: `Extension`, `ProtoId`, `ClientId`
+- `ProtoUid`: `{Extension}:{ProtoId}`
+- `SetHeaderInfo(string extension, string protoId, string cid)`
+
+## RabbitMessageWriter
+
+Implements `IRabbitMessageWriter`.
+
+- Properties: same as `IRabbitMessageHeader`
+- Constructor: `RabbitMessageWriter(bool littleEndian = true)`
+- Methods: same as the interface
+
+## RabbitMessageReader
+
+Implements `IRabbitMessageReader`.
+
+- Properties: same as the interface (including `Next`)
+- Constructor: `RabbitMessageReader(bool littleEndian = true)`
+- Methods: same as the interface, plus typed read/copy helpers from the Buffer interfaces
+
+## RabbitRequestMsg
+
+Extends `RabbitMessageWriter`, implements `IRabbitRequestMsg`.
+
+- Constructor: `RabbitRequestMsg(bool littleEndian = true)`
+- Methods: same as `IRabbitRequestMsg`. `StartWriteData()` calls `WriteHeader()`.
+
+## RabbitResponseMsg
+
+Extends `RabbitMessageReader`, implements `IRabbitResponseMsg`.
+
+- Property: `RsCode`
+- Constructor: `RabbitResponseMsg(bool littleEndian = true)`
+- `StartReadData()`: Read the header, then parse `RsCode`
+- `SetMessageBytes(byte[] msg)`
+- `Clone()`: Clone the current response, including unread buffer data

@@ -1,87 +1,105 @@
 # Namespace: JLGames.RabbitClient.Home
 
-This namespace contains APIs related to interacting with Rabbit-Home servers.
+APIs for Rabbit-Home: settings, route queries, key loading, and defaults.
 
-## Classes and Structures
+## HomeSettings
 
-### HomeResponseInfo
-- Description: Response information returned by Rabbit-Home.
-- Main Properties:
-  - `ExtCode`: Extended status code.
-  - `Info`: Return information, usually a base64 encoded json string.
-  - `Other`: Other return information, usually a base64 encoded json string.
-- Main Methods:
-  - `FromJsonOverride(string json)`: Parse from json string.
-  - `FromJsonString(string json)`: Static method to parse from json string.
+Connection and encryption settings for the Rabbit-Home client.
 
-### HomeSettings
-- Description: Configuration information for Rabbit-Home server.
-- Main Properties:
-  - `HomeUrl`: Rabbit-Home server address.
-  - `UsePost`: Whether to use POST requests.
-  - `EnableKey`: Whether to enable key.
-  - `IsPemKey`: Whether the key is in PEM format.
-  - `PublicKeyPath`: Public key path.
+- Properties:
+  - `HomeUrl`: Service URL.
+  - `UsePost`: Whether to use POST.
+  - `EnableKey`: Whether RSA public-key encryption is enabled.
+  - `IsPemKey`: Whether the public key is PEM / X509 (otherwise PKCS#1 v1.5).
+  - `PublicKeyPath`: Public key file path.
+  - `PublicKeyContent`: Public key text content.
 - Constructor:
-  - `HomeSettings(string homeUrl, bool usePost, bool enableKey, bool isPemKey, string publicKeyPath)`: Initialize configuration information.
+  - `HomeSettings(string homeUrl, bool usePost, bool enableKey, bool isPemKey)`
+- Methods:
+  - `SetPublicKeyPath(string publicKeyPath)`
+  - `SetPublicKeyContent(string publicKeyContent)`
 
-### QueryResult
-- Description: Query Rabbit-Home result.
-- Main Properties:
-  - `Ok`: Whether successful.
-  - `KeyError`: Key error.
-  - `ParamError`: Parameter error.
-  - `TimeOut`: Timeout.
-  - `SucInfo`: Server information returned on success (`QueryRouteBackInfo`).
-  - `FailInfo`: Information returned on failure (`HomeResponseInfo`).
-- Main Methods:
-  - `ToString()`: Return structure content string.
+When loading a public key, `PublicKeyContent` is preferred over `PublicKeyPath`.
 
-### QueryRouteInfo
-- Description: Used to query available Rabbit-Server instances from Rabbit-Home.
-- Main Properties:
-  - `PlatformId`: Service platform Id.
-  - `TypeName`: Type name.
-  - `TempAesKey`: Temporary AES key for encrypting data returned by Rabbit-Home. If not provided, the returned key data will be returned as a Base64 string.
-- Main Methods:
-  - `ToJsonString()`: Serialize to json string.
-  - `ToString()`: Return content string.
+## HomeResponseInfo
 
-### QueryRouteBackInfo
-- Description: Available Rabbit-Server instance information returned by Rabbit-Home.
-- Main Properties:
-  - `Id`: Instance unique Id.
-  - `PlatformId`: Service platform Id.
-  - `TypeName`: Instance type name.
-  - `OpenNetwork`: Open connection protocol.
-  - `OpenAddr`: Open connection address.
-  - `OpenKeyOn`: Whether key verification is enabled.
-  - `OpenBase64Sk`: Base64 string of temporary key.
-  - `OpenSk`: Temporary key byte array, updated after executing ComputeOpenSk.
-- Main Methods:
-  - `ComputeOpenSk(byte[] tempAesKey)`: Decrypt communication key using temporary AES key.
-  - `FromJsonOverride(string json)`: Parse from json string.
-  - `FromJsonString(string json)`: Static method to parse from json string.
-  - `ToString()`: Return content string.
+Response info when a Home query fails. JSON fields: `code` / `value` / `other`.
 
-### RabbitHomeClient
-- Description: Rabbit-Home client, responsible for communicating with Rabbit-Home server and querying available Rabbit-Server instances.
+- Properties: `ExtCode`, `Info`, `Other`
+- Constructor: `HomeResponseInfo(int extCode, string info, string other)`
+- Methods: `FromJsonOverride(string json)`, `FromJsonString(string json)`, `ToString()`
+
+## QueryResult
+
+Result of a route query to Home (struct).
+
+- `Ok`: Whether the query succeeded.
+- `KeyError`: Public key load or parse failed.
+- `ParamError`: Request parameters are invalid.
+- `TimeOut`: Request timed out.
+- `SucInfo`: `QueryRouteBackInfo` on success.
+- `FailInfo`: `HomeResponseInfo` on failure.
+- `ToString()`
+
+## QueryRouteInfo
+
+Request to find a suitable Rabbit-Server instance. JSON fields: `pid` / `type-name` / `temp-key`.
+
+- `PlatformId`: Service platform id.
+- `TypeName`: Type name.
+- `TempAesKey`: Temporary AES key (32 bytes) used to encrypt the Home response session key. If omitted, `OpenBase64Sk` is Base64 only.
+- `ToJsonString()`, `ToString()`
+
+## QueryRouteBackInfo
+
+Available instance info returned by Home. JSON fields: `id` / `pid` / `type-name` / `open-network` / `open-addr` / `open-key-on` / `open-sk`.
+
+- `Id`: Unique instance id.
+- `PlatformId`: Service platform id.
+- `TypeName`: Instance type name.
+- `OpenNetwork`: Open connection protocol.
+- `OpenAddr`: Open connection address.
+- `OpenKeyOn`: Whether key verification is enabled.
+- `OpenBase64Sk`: Base64 session key; encrypted when a temp key was sent.
+- `OpenSk`: Session key bytes, updated after `ComputeOpenSk`.
+- `ComputeOpenSk(byte[] tempAesKey)`: Decrypt `OpenBase64Sk` with a 32-byte temp AES key into `OpenSk`. Empty temp key decodes Base64 only.
+- `FromJsonOverride(string json)`, `FromJsonString(string json)`, `ToString()`
+
+## RabbitHomeClient
+
+Queries Home `/route` for an available instance. Implements `IDisposable`. Default HTTP timeout is 100 seconds. Query parameter key is `q`.
+
+- Property: `HomeUrl`
 - Constructors:
-  - `RabbitHomeClient(string homeUrl, bool usePost)`: Initialize client.
-  - `RabbitHomeClient(string homeUrl, bool usePost, TimeSpan timeout)`: Initialize client and set timeout.
-- Main Methods:
-  - `SetPublicRsa(IRsaPublicCipher pub)`: Set RSA public key.
-  - `SetPublicRsa(RSA pubKey)`: Set RSA public key.
-  - `QueryFromHome(QueryRouteInfo queryInfo, bool isPemKey, string publicKeyPath)`: Query available instances from Rabbit-Home (supports PEM/PKCS1 public key files).
-  - `QueryFromHome(QueryRouteInfo queryInfo, IRsaPublicCipher publicCipher)`: Query available instances from Rabbit-Home (custom public key implementation).
-  - `QueryFromHome(QueryRouteInfo queryInfo)`: Query available instances from Rabbit-Home.
+  - `RabbitHomeClient(string homeUrl, bool usePost)`
+  - `RabbitHomeClient(string homeUrl, bool usePost, TimeSpan timeout)`
+  - `RabbitHomeClient(IHttpClientProxy httpProxyProxy, string homeUrl, bool usePost)`
+  - `RabbitHomeClient(IHttpClientProxy httpProxyProxy, string homeUrl, bool usePost, TimeSpan timeout)`
+- Methods:
+  - `SetPublicRsa(IRsaPublicCipher pub)` / `SetPublicRsa(RSA pubKey)`
+  - `QueryFromHome(QueryRouteInfo queryInfo, bool isPemKey, string publicKeyPath, string publicKeyContent)`: Load public key from path or content; `KeyError = true` if load fails.
+  - `QueryFromHome(QueryRouteInfo queryInfo, IRsaPublicCipher publicCipher)`
+  - `QueryFromHome(QueryRouteInfo queryInfo)`: Uses the configured public key; no encryption if unset. `ParamError = true` when `queryInfo` is null.
+  - `Dispose()`
 
-### RabbitHomeDefaults
-- Description: Rabbit-Home related constants and default configuration.
-- Main Properties/Methods:
-  - `HttpKeyQuery`: Query parameter name.
-  - `HttpPatternRoute`: Route path.
-  - `LittleEndian`: Byte order setting.
-  - `Base64Encoding`: Base64 encoding implementation.
-  - `SetLittleEndian(bool)`: Set byte order.
-  - `SetBase64Encoding(IBase64Encoding)`: Set Base64 encoding implementation.
+The request body is `QueryRouteInfo` JSON, UTF-8 encoded, optionally RSA-encrypted, then encoded as `q` with `RabbitHomeDefaults.Base64Encoding` (default `Base64RawUrlEncoding`).
+
+## RabbitHomeDefaults
+
+Default settings for Home communication.
+
+- `HttpKeyQuery`: `"q"`
+- `HttpPatternRoute`: `"/route"`
+- `LittleEndian`: default `true`; `SetLittleEndian(bool)`
+- `Base64Encoding`: default `Base64RawUrlEncoding`; `SetBase64Encoding(IBase64Encoding)`
+
+## RabbitHomeUtils
+
+Loads the RSA public key used for Home communication. PEM / X509 vs PKCS#1 v1.5 is selected by `isPemKey`. Non-empty content is preferred over path.
+
+- `LoadHomePublicRsa(HomeSettings homeSettings)`
+- `LoadHomePublicRsa(bool isPemKey, string pubKeyPath, string pubKeyContent)`
+- `LoadHomePublicRsaWithPath(bool isPemKey, string pubKeyPath)`
+- `LoadHomePublicRsaWithContent(bool isPemKey, string pubKeyContent)`
+
+Returns `null` when both path and content are empty.

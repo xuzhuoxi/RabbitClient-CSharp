@@ -1,79 +1,123 @@
-# Rabbit-Client-CSharp API Documentation Overview
+# RabbitClient-CSharp API Documentation Overview
 
 ## Overview
 
-Rabbit-Client-CSharp is a C# client framework designed for distributed game servers, supporting efficient communication with Rabbit-Home, Rabbit-Server, and other services. It is suitable for various scenarios including MMO, rooms, entities, and messaging. This documentation covers API references for all core modules.
+RabbitClient-CSharp is a .NET Standard 2.0 client library for Rabbit-Home / Rabbit-Server. The entry point is `JLGames.RabbitClient.RabbitClientManager`: query a route from Rabbit-Home, connect to the matching Rabbit-Server over Socket, and send/receive encrypted messages. This documentation matches the current public API.
 
 ## Module List
 
+### Manager
+
+- **[JLGames.RabbitClient](JLGames.RabbitClient.md)**
+  - `RabbitClientManager`: query, connect, session encryption, progress events
+  - `RabbitClientManagerEvents`: Home / Server progress and connect-finish events
+
 ### Home Module
+
 - **[JLGames.RabbitClient.Home](JLGames.RabbitClient.Home.md)**
-  - HomeResponseInfo - Home server response information structure
-  - HomeSettings - Home server configuration information
-  - QueryResult, QueryRouteInfo, QueryRouteBackInfo - Query and routing related structures
-  - RabbitHomeClient - Home service client
-  - RabbitHomeDefaults - Home related constants and configuration
+  - `HomeSettings`, `HomeResponseInfo`
+  - `QueryResult`, `QueryRouteInfo`, `QueryRouteBackInfo`
+  - `RabbitHomeClient`, `RabbitHomeDefaults`, `RabbitHomeUtils`
 
 ### Server Core Module
+
 - **[JLGames.RabbitClient.Server](JLGames.RabbitClient.Server.md)**
-  - RabbitSocketClient, RabbitSocketServer - Socket communication core
-  - RabbitServerDefaults - Server default configuration
-  - RabbitSocketServerEvents, RabbitSocketClientEvents - Connection and message events
+  - `RabbitSocketClient`, `RabbitSocketServer`
+  - `RabbitServerDefaults`
+  - `RabbitSocketClientEvents`, `RabbitSocketServerEvents`
 
 ### Message Protocol Module
-- **[JLGames.RabbitClient.Server.Message](JLGames.RabbitClient.Server.Message.md)**
-  - IRabbitMessage, IRabbitMessageReader, IRabbitMessageWriter - Message interfaces
-  - RabbitMessageReader, RabbitMessageWriter - Message read/write implementations
-  - IRabbitRequestMsg, RabbitRequestMsg - Request message interface and implementation
-  - IRabbitResponseMsg, RabbitResponseMsg - Response message interface and implementation
-  - RabbitHeader - Message header structure
 
-### MMO/Entity/Variable/Event Module
+- **[JLGames.RabbitClient.Server.Message](JLGames.RabbitClient.Server.Message.md)**
+  - `IRabbitMessageHeader`, `IRabbitMessageContent`
+  - `IRabbitMessageReader`, `IRabbitMessageWriter`
+  - `RabbitMessageHeader`, `RabbitMessageReader`, `RabbitMessageWriter`
+  - `IRabbitRequestMsg` / `RabbitRequestMsg`
+  - `IRabbitResponseMsg` / `RabbitResponseMsg`
+
+### MMO Module
+
 - **[JLGames.RabbitClient.Server.MMO](JLGames.RabbitClient.Server.MMO.md)**
-  - Entity/EntityPlayer/EntityRoom/EntityUnit - MMO entity structures
-  - IVarSet, VarSet - Variable collection interface and implementation
-  - MmoManager, MmoSettings - MMO management and configuration
-  - Various events (PlayerEvents, RoomEvents, UnitEvents, WorldEvents)
-  - Metadata and constants (MmoMetas, ProtoMMOCode, PlayerVarKeys, RoomVarKeys, UnitVarKeys, etc.)
-  - Mathematical structures (V2Int, V3Int, etc.)
-  - Enumeration types (EntityType, VarType, CampType, RoomType, UnitType, etc.)
+  - Entities: `IEntity` / `EntityPlayer` / `EntityRoom` / `EntityUnit`
+  - Variables: `IVarSet`, `VarSet`, `VarData<T>`, `VarSetDelegates`
+  - Manager: `MmoManager`
+  - Events: `PlayerEvents`, `RoomEvents`, `UnitEvents`, `WorldEvents`
+  - Meta: `MmoMetas`, `ProtoMMOCode`, `PlayerVarKeys`, `RoomVarKeys`, `UnitVarKeys`
+  - Math: `V2Int`, `V3Int`
+  - Enums: `EntityType`, `VarType`, `CampType`, `RoomType`, `UnitType`
 
 ## Quick Start
 
-### Basic Usage Example
+Prefer `RabbitClientManager` for discovery and connection. Home and Socket modules can also be used on their own.
 
 ```csharp
-// 1. Query Rabbit-Home to get available servers
-var homeClient = new RabbitHomeClient("http://home.server", true);
-var queryInfo = new QueryRouteInfo { PlatformId = "game", TypeName = "MMO" };
+using System.Threading;
+using System.Threading.Tasks;
+using JLGames.Infra.Net;
+using JLGames.RabbitClient;
+using JLGames.RabbitClient.Home;
+using JLGames.RabbitClient.Server.Message;
+
+var homeUrl = "http://127.0.0.1:9000";
+var httpProxy = new HttpClientProxy(homeUrl);
+var manager = new RabbitClientManager(
+    httpProxy,
+    homeUrl,
+    usePost: false,
+    enableKey: true,
+    isPemKey: true,
+    pubKeyPath: "x509_public.pem",
+    pubKeyContent: null);
+
+manager.SetThreadSocketContext(SynchronizationContext.Current);
+manager.AddEventListener(RabbitClientManagerEvents.EventOnConnectFinish, evd =>
+{
+    if (!(bool)evd.Data) return;
+
+    manager.SocketClient.GetExtensionDispatcher("Mmo")
+        .AddEventListener("PER", e => { /* RabbitResponseMsg */ });
+
+    var req = new RabbitRequestMsg();
+    req.SetClientId("cid");
+    req.SetProtoInfo("Mmo", "PER");
+    req.StartWriteData();
+    req.WriteRequestBase("hello");
+    manager.SocketClient.SendMessage(req);
+});
+
+await manager.ConnectThroughHome("main01", "Rabbit-Server", randomAesKey: true);
+```
+
+When `randomAesKey` is `true`, a 32-byte temporary AES key is derived with passphrase `RabbitClient` by default.
+
+Query a route and connect yourself:
+
+```csharp
+var homeClient = new RabbitHomeClient("http://127.0.0.1:9000", usePost: false);
+var queryInfo = new QueryRouteInfo { PlatformId = "main01", TypeName = "Rabbit-Server" };
 var result = await homeClient.QueryFromHome(queryInfo);
-if (result.Ok) {
-    var serverInfo = result.SucInfo;
-    // ...
+if (result.Ok)
+{
+    var server = new RabbitSocketServer();
+    server.ConnectServer(result.SucInfo);
 }
+```
 
-// 2. Connect to Rabbit-Server and send messages
-var server = new RabbitSocketServer();
-server.ConnectServer(serverInfo);
-var client = new RabbitSocketClient(server);
-client.StartReceiving();
-client.SendMessage(new RabbitRequestMsg());
+Variable set:
 
-// 3. Variable operations
+```csharp
 IVarSet vars = new VarSet(true);
 vars.SetVar("hp", 100);
-vars.SetVar("pos", new V3Int(1,2,3));
+vars.SetVar("pos", new V3Int(1, 2, 3));
 ```
 
 ### Module Dependencies
 
 ```
-RabbitClient
+JLGames.RabbitClient
 ├── Home
 ├── Server
 │   ├── Message
-│   │   ├── Request
-│   │   └── Response
 │   └── MMO
 │       ├── Entity
 │       ├── Event
@@ -84,25 +128,11 @@ RabbitClient
 
 ## Version Information
 
-- **Framework Version:** Rabbit-Client-CSharp
-- **Target Framework:** .NET Standard 2.0+
-- **C# Version:** 7.3+
-- **Documentation Version:** 1.0
-
-## Contributing Guidelines
-
-If you want to contribute code or improve documentation, please follow these standards:
-
-1. Maintain consistent code style
-2. Add appropriate XML comments
-3. Include both Chinese and English comments
-4. Provide usage examples
-5. Update related documentation
+- **Library:** RabbitClient-CSharp
+- **Target framework:** .NET Standard 2.0
+- **C# version:** 7.3+
+- **Documentation:** aligned with the current public API
 
 ## License
 
-This documentation and related code follow the corresponding open source license.
-
----
-
-**Note:** This documentation covers all major modules of the Rabbit-Client-CSharp framework. Each module has detailed API documentation, including interface definitions, class descriptions, method descriptions, and usage examples. It is recommended to refer to the corresponding module documentation based on specific needs.
+This documentation and related code are released under the [MIT](../../LICENSE) license.
